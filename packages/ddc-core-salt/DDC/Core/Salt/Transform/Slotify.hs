@@ -47,6 +47,7 @@ slotifyModule a mm@ModuleCore{}
 
    in    case Check.checkModule 
                 (Check.configOfProfile A.profile) 
+                mempty
                 mmANF Check.Recon of
 
            -- Couldn't reconstruct type annotations.

@@ -28,6 +28,7 @@ import qualified DDC.Core.Exp                           as C
 import qualified DDC.Core.Parser                        as C
 import qualified DDC.Core.Lexer                         as C
 import qualified DDC.Core.Simplifier                    as C
+import qualified DDC.Core.Env.Soup                      as C
 
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
 import qualified DDC.Core.Transform.Resolve             as CResolve
@@ -43,7 +44,7 @@ data ConfigCoreLoad
         , configSinkTrace       :: B.Sink       -- ^ Sink for type checker trace.
         }
 
--- | Load a core module from text.
+-- | Load a closed core module from text.
 coreLoad
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
         => String                       -- ^ Name of compiler stage.
@@ -69,7 +70,7 @@ coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
         mm_checked <- coreCheck "CoreLoad" fragment mode
                         (configSinkTrace   config)
                         (configSinkChecked config)  
-                        mm_core
+                        mempty mm_core
 
         return mm_checked
 
@@ -124,17 +125,19 @@ coreCheck
         -> C.Mode n                     -- ^ Checker mode.
         -> B.Sink                       -- ^ Sink for checker trace.
         -> B.Sink                       -- ^ Sink for checked core code.
+        -> C.Soup   n                   -- ^ Top-level soup for the module.
         -> C.Module a n                 -- ^ Core module to check.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC a n) n)
 
-coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
+coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !soup !mm
  = {-# SCC "coreCheck" #-}
    do
         let profile  = C.fragmentProfile fragment
+        let config   = C.configOfProfile profile
 
         -- Type check the module with the generic core type checker.
         mm_checked      
-         <- case C.checkModule (C.configOfProfile profile) mm mode of
+         <- case C.checkModule config soup mm mode of
                 (Left err,  C.CheckTrace doc) 
                  -> do  liftIO $  B.pipeSink (renderIndent doc) sinkTrace
                         throwE $ [B.ErrorLint stage "PipeCoreCheck/Check" err]
@@ -163,7 +166,7 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Re-check a core module, replacing existing type annotations.
+-- | Re-check a closed core module, replacing existing type annotations.
 coreReCheck
         :: ( Pretty a, Show a
            , Pretty (err (C.AnTEC a n))
@@ -180,7 +183,7 @@ coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
  = {-# SCC "coreReCheck" #-}
    do
         let mm_reannot  = CReannotate.reannotate C.annotTail mm
-        coreCheck stage fragment mode sinkTrace sinkChecked mm_reannot
+        coreCheck stage fragment mode sinkTrace sinkChecked mempty mm_reannot
 
 
 ---------------------------------------------------------------------------------------------------

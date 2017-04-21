@@ -42,8 +42,10 @@ pModule c
                 = Map.fromList  [ (n, (iTypes, iValues, iBoxes ))
                                 | HeadPragmaArity n iTypes iValues iBoxes <- heads ]
 
-        let attachAritySpec (ImportForeignValue n (ImportValueModule mn v t _))
-                = ImportForeignValue n (ImportValueModule mn v t (Map.lookup n importArities))
+        let attachAritySpec (ImportForeignValue n (ImportValueModule mn nSpecific t mnLocal _))
+                = ImportForeignValue n 
+                $ ImportValueModule mn nSpecific t mnLocal 
+                $ Map.lookup n importArities
 
             attachAritySpec spec = spec
 

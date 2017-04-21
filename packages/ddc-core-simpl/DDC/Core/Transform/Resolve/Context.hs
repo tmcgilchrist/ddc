@@ -50,7 +50,7 @@ makeContextOfModule
         -> S a n (Context n)
 
 makeContextOfModule !profile !ntsTop !mm
- = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _) 
+ = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _ _) 
                                     <- moduleImportValues mm ]
 
         refTopUsed      <- liftIO $ newIORef []

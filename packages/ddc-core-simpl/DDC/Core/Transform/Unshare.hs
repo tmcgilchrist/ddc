@@ -57,10 +57,10 @@ addParamsImportValue
 
 addParamsImportValue iv 
  = case iv of
-        ImportValueModule m n t (Just (nType, nValue, nBoxes))
+        ImportValueModule m n t mnLocal (Just (nType, nValue, nBoxes))
          -> case addParamsT t of
                 Just t' 
-                 -> ( ImportValueModule m n t' 
+                 -> ( ImportValueModule m n t' mnLocal
                         (Just (nType, nValue + 1, nBoxes))
                     , Map.singleton n t')
 

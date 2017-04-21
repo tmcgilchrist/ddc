@@ -104,8 +104,8 @@ spreadImportCapX kenv _tenv isrc
 ---------------------------------------------------------------------------------------------------
 spreadImportValueX kenv _tenv isrc
   = case isrc of
-        ImportValueModule mn n t mArity
-         -> ImportValueModule   mn n (spreadT kenv t) mArity
+        ImportValueModule     mn nSpecific t mnLocal mArity
+         -> ImportValueModule mn nSpecific (spreadT kenv t) mnLocal mArity
 
         ImportValueSea n t
          -> ImportValueSea n    (spreadT kenv t)

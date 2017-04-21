@@ -91,7 +91,7 @@ takeCallableFromImport n im
  --  which comes in the interface file. We need the arity information
  --  because the super may return a functional value, which we cannot 
  --  direct from its logical type alone.
- | ImportValueModule _ _ tThing (Just arity) <- im
+ | ImportValueModule _ _ tThing _ (Just arity) <- im
  , (nTypes, nValues, nBoxes)                 <- arity
  = case Call.takeStdCallConsFromTypeArity tThing nTypes nValues nBoxes of
         Nothing 

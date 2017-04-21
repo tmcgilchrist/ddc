@@ -133,7 +133,7 @@ loadModuleFromString fragment filePath lineStart mode src
         loadModuleFromTokens fragment filePath mode toks
 
 
--- | Parse and type check a core module from some tokens.
+-- | Parse and type check a closed core module from some tokens.
 loadModuleFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err               -- ^ Language fragment definition.
@@ -163,7 +163,7 @@ loadModuleFromTokens fragment sourceName mode toks'
 
         -- Check that the module is type well-typed.
         goCheckType mm
-         = case C.checkModule config mm mode of
+         = case C.checkModule config mempty mm mode of
                 (Left err,  ct) -> (Left (ErrorCheckExp err),   Just ct)
                 (Right mm', ct) -> goCheckCompliance ct mm'
 

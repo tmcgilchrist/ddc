@@ -179,10 +179,10 @@ convertImportValueM
 
 convertImportValueM isrc
  = case isrc of
-        ImportValueModule mn n t _
-         -> do  n'      <- convertName n
+        ImportValueModule mn nSpecific t _  _
+         -> do  n'      <- convertName nSpecific
                 t'      <- convertType t
-                return  $ ImportValueModule mn n' t' Nothing
+                return  $ ImportValueModule mn n' t' Nothing Nothing
 
         ImportValueSea str t
          -> do  t'      <- convertType t 

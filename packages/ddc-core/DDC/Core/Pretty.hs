@@ -183,17 +183,18 @@ pprImportCap (n, isrc)
 pprImportValue :: (Pretty n, Pretty t) => (n, ImportValue n t) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
-        ImportValueModule _mn _nSrc t Nothing
-         ->        text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+        ImportValueModule _mn nSpecific t mnLocal mnArity
+         ->     text "import value" <+> ppr nSpecific <+> text ":" <+> ppr t
+         <> maybe empty (\nLocal
+             -> line <> text "          as"
+                        <+> ppr nLocal)
+                mnLocal
+         <> maybe empty (\(arityType, arityValue, arityBoxes)
+             -> line <> text "        with arity" 
+                        <+> ppr arityType <+> ppr arityValue <+> ppr arityBoxes)
+                mnArity
+         <> semi <> line
 
-        ImportValueModule _mn _nSrc t (Just (arityType, arityValue, arityBoxes))
-         -> vcat [ text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
-                 , text "{-# ARITY   " <+> padL 10 (ppr n) 
-                                       <+> ppr arityType 
-                                       <+> ppr arityValue 
-                                       <+> ppr arityBoxes
-                                       <+> text "#-}"
-                 , empty ]
 
         ImportValueSea _var t
          -> text "import foreign c value" <> line

@@ -30,7 +30,8 @@ data Interface ta sa
         , interfaceModuleName   :: ModuleName
         , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
-
+        deriving Show
+        
 
 ---------------------------------------------------------------------------------------------------
 instance Pretty (Interface ta sa) where

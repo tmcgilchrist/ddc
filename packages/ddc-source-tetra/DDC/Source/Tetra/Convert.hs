@@ -188,11 +188,15 @@ toCoreImportValue
 
 toCoreImportValue src
  = case src of
-        ImportValueModule mn n t mA
+        ImportValueModule mn n t mnLocal mA
          ->  ImportValueModule 
          <$> pure mn    <*> toCoreXBVN n 
                         <*> toCoreT UniverseSpec t 
+                        <*> (case mnLocal of
+                                Nothing -> pure Nothing
+                                Just n' -> fmap Just $ toCoreXBVN n')
                         <*> pure mA
+
 
         ImportValueSea v t
          -> ImportValueSea 

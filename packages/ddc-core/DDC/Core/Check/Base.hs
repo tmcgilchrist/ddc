@@ -15,7 +15,7 @@ module DDC.Core.Check.Base
 
           -- Things defined elsewhere.
         , throw, runCheck, evalCheck
-        , EnvX,  EnvT, TypeEnv, KindEnv
+        , Soup, EnvX,  EnvT, TypeEnv, KindEnv
         , Set
         , module DDC.Core.Check.Error
         , module DDC.Core.Collect
@@ -39,6 +39,7 @@ import DDC.Core.Check.Context
 import DDC.Core.Check.Config
 import DDC.Core.Env.EnvT                (EnvT)
 import DDC.Core.Env.EnvX                (EnvX)
+import DDC.Core.Env.Soup                (Soup)
 
 import DDC.Type.Env                     (TypeEnv, KindEnv)
 import DDC.Type.DataDef

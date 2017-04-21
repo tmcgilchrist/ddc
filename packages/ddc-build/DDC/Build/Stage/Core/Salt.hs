@@ -171,7 +171,8 @@ saltToSea srcName platform mm
         mm_checked
          <- BC.coreCheck
                 srcName BA.fragment C.Recon
-                B.SinkDiscard B.SinkDiscard mm_simpl
+                B.SinkDiscard B.SinkDiscard 
+                mempty mm_simpl
 
         -- Insert control transfer primops.
         mm_transfer
@@ -216,7 +217,8 @@ saltToLlvm
         mm_checked
          <- BC.coreCheck
                 srcName BA.fragment C.Recon
-                B.SinkDiscard B.SinkDiscard mm_simpl
+                B.SinkDiscard B.SinkDiscard 
+                mempty mm_simpl
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkPrep
 

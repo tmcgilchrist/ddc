@@ -79,8 +79,9 @@ instance NFData Name where
   = case nn of
         NameVar s               -> rnf s
         NameCon s               -> rnf s
-        NameExt n s             -> rnf n `seq` rnf s
-        
+        NameExt n s             -> rnf n  `seq` rnf s
+        NameQualified mn n      -> rnf mn `seq` rnf n
+
         NameTyConTetra con      -> rnf con
         NameDaConTetra con      -> rnf con
 
@@ -111,7 +112,8 @@ instance Pretty Name where
   = case nn of
         NameVar  v              -> text v
         NameCon  c              -> text c
-        NameExt  n s            -> ppr n <> text "$" <> text s
+        NameExt  n s            -> ppr n  <> text "$" <> text s
+        NameQualified mn n      -> ppr mn <> text "." <> ppr  n
 
         NameTyConTetra tc       -> ppr tc
         NameDaConTetra dc       -> ppr dc

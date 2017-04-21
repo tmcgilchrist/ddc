@@ -274,19 +274,19 @@ convertImportValueM tctx isrc
         --   Just convert the type assuming it's a standard call.
         --   If this is wrong then the Salt type checker will
         --   catch the problem.
-        ImportValueModule mn n t Nothing
+        ImportValueModule mn n t _ Nothing
          -> do  let cs  =  takeCallConsFromType t
                 n'      <- convertBindNameM n
                 t'      <- convertSuperConsT tctx cs t
-                return  $  ImportValueModule mn n' t' Nothing
+                return  $  ImportValueModule mn n' t' Nothing Nothing
 
         -- We have arity information for this thing from
         -- from the imported interface file.
-        ImportValueModule mn n t (Just (nType, nValue, nBox))
+        ImportValueModule mn n t _ (Just (nType, nValue, nBox))
          -> do  let Just cs = takeStdCallConsFromTypeArity t nType nValue nBox
                 n'      <- convertBindNameM n
                 t'      <- convertSuperConsT tctx cs t
-                return  $  ImportValueModule mn n' t' Nothing
+                return  $  ImportValueModule mn n' t' Nothing Nothing
 
         -- We convert the types of Sea things directly.
         --   We assume that they don't return thunks,

@@ -105,35 +105,41 @@ mapTypeOfImportCap f ii
 data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
-        { -- | Name of the module that we're importing from.
-          importValueModuleName        :: !ModuleName 
+        { 
+          -- | Name of the module that we're importing from.
+          importValueModuleName         :: !ModuleName 
 
-          -- | Name of the the value that we're importing.
-        , importValueModuleVar         :: !n 
+          -- | Name specific to the module we're importing from 
+          --   (the name qualified by the source module name).
+        , importValueModuleSpecific     :: !n
 
           -- | Type of the value that we're importing.
-        , importValueModuleType        :: !t
+        , importValueModuleType         :: !t
+
+          -- | Local name of the value that we're importing, 
+          --   or Nothing if we're not giving it a local name.
+        , importValueModuleLocal        :: !(Maybe n)
 
           -- | Calling convention for this value,
           --   including the number of type parameters, value parameters, and boxings.
-        , importValueModuleArity       :: !(Maybe (Int, Int, Int)) }
+        , importValueModuleArity        :: !(Maybe (Int, Int, Int)) }
 
         -- | Value imported via the C calling convention.
         | ImportValueSea
         { -- | Name of the symbol being imported. 
           --   This can be different from the name that we give it in the core language.
-          importValueSeaVar            :: !String 
+          importValueSeaVar             :: !String 
 
           -- | Type of the value that we're importing.
-        , importValueSeaType           :: !t }
+        , importValueSeaType            :: !t }
         deriving Show
 
 
 instance (NFData n, NFData t) => NFData (ImportValue n t) where
  rnf is
   = case is of
-        ImportValueModule mn n t mAV 
-         -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
+        ImportValueModule mn nSpecific t mnLocal mAV 
+         -> rnf mn `seq` rnf nSpecific `seq` rnf t `seq` rnf mnLocal `seq` rnf mAV
 
         ImportValueSea v t
          -> rnf v  `seq` rnf t
@@ -143,14 +149,17 @@ instance (NFData n, NFData t) => NFData (ImportValue n t) where
 typeOfImportValue :: ImportValue n t -> t
 typeOfImportValue src
  = case src of
-        ImportValueModule _ _ t _       -> t
-        ImportValueSea      _ t         -> t
+        ImportValueModule _ _ t _ _     -> t
+        ImportValueSea    _ t           -> t
 
 
 -- | Apply a function to the type in an ImportValue.
 mapTypeOfImportValue :: (t -> t) -> ImportValue n t -> ImportValue n t
 mapTypeOfImportValue f isrc
  = case isrc of
-        ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a
-        ImportValueSea s t              -> ImportValueSea s (f t)
+        ImportValueModule mn nSpecific t mnLocal mAr  
+         -> ImportValueModule mn nSpecific (f t) mnLocal mAr
+
+        ImportValueSea s t
+         -> ImportValueSea s (f t)
 

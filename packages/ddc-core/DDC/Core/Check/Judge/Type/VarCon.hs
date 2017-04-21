@@ -6,8 +6,10 @@ import DDC.Core.Check.Judge.Type.DaCon
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified DDC.Core.Env.Soup      as Soup
 import qualified DDC.Type.Sum           as Sum
-import qualified Data.Map               as Map
+import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
 
 
 -------------------------------------------------------------------------------
@@ -37,6 +39,49 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         (Sum.empty kEffect)
                         ctx
 
+ -- Look in the top-level soup.
+ | UName nameBase       <- u
+ , Just mpName          <- Map.lookup nameBase 
+                        $  Soup.soupTermTypes $ contextSoup ctx
+ = case Map.toList mpName of
+    [ (_modName, (nameSpecific, tActual)) ]
+     -> case mode of
+         -- Check subsumption against an existing type.
+         -- This may instantiate existentials in the exising type.
+         -- TODO: fix this we're not using actual type.
+         Check tExpect
+           -> do  (xx', tt', effs', ctx')
+                   <- checkSub table a ctx demand xx tExpect
+
+                  let ctx_used
+                        = ctx' { contextSoupUsedTerms
+                               = Set.insert nameSpecific (contextSoupUsedTerms ctx) }
+
+                  return (xx', tt', effs', ctx_used)
+
+         _ -> do
+                ctrace  $ vcat
+                        [ text "**  Var Soup"
+                        , indent 4 $ ppr xx
+                        , text "    nBase:      " <> ppr nameBase
+                        , text "    nSpecific:  " <> ppr nameSpecific
+                        , text "    tActual:    " <> ppr tActual
+                        , indent 4 $ ppr ctx
+                        , empty ]
+
+                let ctx_used
+                        = ctx   { contextSoupUsedTerms
+                                = Set.insert nameSpecific (contextSoupUsedTerms ctx) }
+
+                returnX a
+                        (\z -> XVar z (UName nameSpecific))
+                        tActual
+                        (Sum.empty kEffect)
+                        ctx_used
+
+    -- TODO: proper error message.
+    _ -> error "check: var is multiply bound"
+
  -- Look in the global environment.
  | Just t      <- EnvX.lookupX u (contextEnvX ctx)
  = case mode of
@@ -50,6 +95,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         , indent 4 $ ppr xx
                         , text "    tVar: " <> ppr t
                         , indent 4 $ ppr ctx
+                        , text (show $ contextSoup ctx)
                         , empty ]
 
                 returnX a

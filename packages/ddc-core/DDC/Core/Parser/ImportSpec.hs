@@ -184,7 +184,8 @@ pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  $ ImportForeignValue n (ImportValueModule (ModuleName []) n t Nothing)
+        return  $ ImportForeignValue n 
+                $ ImportValueModule (ModuleName []) n t Nothing Nothing
 
 
 -- | Parse a foreign value import spec.

@@ -143,7 +143,8 @@ pipeCore !mm !pp
 
         PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
          -> do  result'  <- runExceptT 
-                        $   coreCheck stage fragment mode sinkTrace  SinkDiscard mm
+                        $   coreCheck stage fragment mode
+                                sinkTrace  SinkDiscard mempty mm
                 case result' of
                  Left  errs     -> return errs
                  Right mm'      -> pipeCores mm' pipes
@@ -365,7 +366,7 @@ pipeFlow !mm !pp
 
                 goRate
                  -- Rate inference uses the types
-                 = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
+                 = case C.checkModule (C.configOfProfile Flow.profile) mempty mm_float C.Recon of
                      (Left err, _)    
                       -> return [ErrorCoreTransform err]
 
@@ -374,8 +375,9 @@ pipeFlow !mm !pp
                              mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
                            
                              config      = C.configOfProfile Flow.profile
+
                             -- Synthesise the types of any newly created bindings.
-                         in case C.checkModule config mm_flow (C.Synth [])  of
+                         in case C.checkModule config mempty mm_flow (C.Synth [])  of
                              (Left err, _ct)         
                               -> return [ErrorCoreTransform err]
                             
@@ -437,9 +439,10 @@ pipeFlow !mm !pp
             in  case Flow.tetraOfFlowModule mm_namified of
                  Left  err  -> return [ErrorFlowConvert err]
                  Right mm'  ->
-                  case C.checkModule (C.configOfProfile Salt.profile) mm' C.Recon of
+                  case C.checkModule (C.configOfProfile Salt.profile) mempty mm' C.Recon of
                    (Left err, _ct)         
                     -> return [ErrorCoreTransform err]
+
                    (Right mm_check', _ct) 
                     -> let mm_reannot' = C.reannotate (const ()) mm_check'
 

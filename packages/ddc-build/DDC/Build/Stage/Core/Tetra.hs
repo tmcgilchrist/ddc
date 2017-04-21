@@ -113,7 +113,7 @@ tetraToSalt platform runtimeConfig mm config
          <-  B.coreCheck    
                 "TetraToSalt/lambdas" BE.fragment C.Recon 
                 B.SinkDiscard B.SinkDiscard
-                mm_explicit
+                mempty mm_explicit
 
 
         -- Perform lambda lifting.
@@ -133,7 +133,7 @@ tetraToSalt platform runtimeConfig mm config
          <- B.coreCheck
                 "TetraToSalt/unshare" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_lambdas
+                mempty mm_lambdas
 
 
         -- Perform the unsharing transform.
@@ -197,7 +197,7 @@ tetraToSalt platform runtimeConfig mm config
          <- B.coreCheck
                 "TetraToSalt/toSalt" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_prep_salt
+                mempty mm_prep_salt
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_salt)
                             (configSinkChecked config)

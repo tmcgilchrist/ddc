@@ -12,6 +12,7 @@ import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Control.Check                (runCheck, throw)
+import DDC.Core.Env.Soup                ()                      -- TODO: souped.
 
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -29,14 +30,15 @@ import qualified Data.Map.Strict        as Map
 checkModule
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
+        -> Soup   n             -- ^ Top-level soup.
         -> Module a n           -- ^ Module to check.
-        -> Mode n               -- ^ Type checker mode.
+        -> Mode   n             -- ^ Type checker mode.
         -> ( Either (Error a n) (Module (AnTEC a n) n)
            , CheckTrace )
 
-checkModule !config !xx !mode
+checkModule !config !soup !xx !mode
  = let  (s, result)     = runCheck (mempty, 0, 0)
-                        $ checkModuleM config xx mode
+                        $ checkModuleM config soup xx mode
         (tr, _, _)      = s
    in   (result, tr)
 
@@ -46,11 +48,12 @@ checkModule !config !xx !mode
 checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
+        -> Soup   n             -- ^ Top-level soup.
         -> Module a n           -- ^ Module to check.
-        -> Mode n               -- ^ Type checker mode.
+        -> Mode   n             -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM !config mm@ModuleCore{} !mode
+checkModuleM !config !soup mm@ModuleCore{} !mode
  = do
         let envT_prim
                 = EnvT.empty
@@ -213,7 +216,10 @@ checkModuleM !config mm@ModuleCore{} !mode
         --  These contain names that are visible to bindings in the module.
         let envT_top    = envT_importCaps
         let envX_top    = envX_importValues
-        let ctx_top     = emptyContext { contextEnvX = envX_top }
+
+        let ctx_top     = emptyContext 
+                        { contextSoup   = soup
+                        , contextEnvX   = envX_top }
 
 
         -- Check the sigs of exported types ---------------
@@ -587,8 +593,8 @@ checkImportValues config env mode nisrcs
                 Nothing                 -> pack (Map.insert n isrc mm) nis
 
         -- Check if two imported values of the same name are compatable.
-        compat (ImportValueModule _ _ t1 a1) 
-               (ImportValueModule _ _ t2 a2)
+        compat (ImportValueModule _ _ t1 _ a1) 
+               (ImportValueModule _ _ t2 _ a2)
          = equivT (contextEnvT ctx) t1 t2 && a1 == a2
 
         compat (ImportValueSea _ t1)

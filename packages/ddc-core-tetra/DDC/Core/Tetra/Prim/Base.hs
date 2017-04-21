@@ -16,6 +16,7 @@ module DDC.Core.Tetra.Prim.Base
 where
 import Data.Typeable
 import Data.Text        (Text)
+import DDC.Core.Module.Name
 import DDC.Core.Salt.Name
         ( PrimTyCon     (..)
         , PrimArith     (..)
@@ -32,6 +33,9 @@ data Name
 
         -- | An extended name.
         | NameExt               !Name !String
+
+        -- | A name with a module qualifier.
+        | NameQualified         !ModuleName !Name
 
         -- | Baked-in type constructors.
         | NameTyConTetra        !TyConTetra

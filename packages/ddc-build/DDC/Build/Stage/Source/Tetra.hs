@@ -86,7 +86,6 @@ sourceLoad srcName srcLine str store config
                 srcName srcLine str
                 (configSinkTokens  config)
 
-
         -- Desugar source.
         mm_desugared
          <- sourceDesugar 
@@ -98,7 +97,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkPrep    config)
                 mm_source
 
-
         -- Lower source to core.
         mm_core
          <- sourceLower 
@@ -107,7 +105,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkResolve  config)
                 (configSinkPreCheck config)
                 mm_desugared
-
 
         -- Check core.
         let fragment
@@ -126,6 +123,9 @@ sourceLoad srcName srcLine str store config
                                    (CNamify.makeNamifier CE.freshX)))
                 mm_core
 
+        -- Extract a soup of top-level things from the interface store.
+        soup    <- liftIO $ B.tetraSoupOfStore store
+
         mm_checked
          <- BC.coreCheck 
                 "SourceLoadText"
@@ -133,7 +133,7 @@ sourceLoad srcName srcLine str store config
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
-                mm_namified
+                soup mm_namified
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified) 
                             (configSinkNamified config)

@@ -10,7 +10,9 @@ module DDC.Build.Interface.Store
         , getInterfaces
 
         , Super (..)
-        , findSuper)
+        , findSuper
+
+        , tetraSoupOfStore)
 where
 import DDC.Data.Pretty
 import DDC.Build.Interface.Base         
@@ -23,10 +25,11 @@ import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
+import DDC.Core.Env.Soup                (Soup)
+import qualified DDC.Core.Env.Soup      as Soup
 import qualified DDC.Core.Tetra         as E
 import qualified DDC.Core.Salt          as A
 import qualified Data.Map               as Map
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Abstract API to a collection of module interfaces.
@@ -181,6 +184,28 @@ findSuper store n modNames
                         Map.lookup n nSupers)
                 modNames
 
+-------------------------------------------------------------------------------
+-- | Produce a Tetra Soup from the interface store.
+--
+--   The soup contains the definitions of things in the top-level
+--   namespace that are used for type checking.
+--
+tetraSoupOfStore :: Store -> IO (Soup E.Name)
+tetraSoupOfStore store
+ = do   
+        is      <- readIORef $ storeInterfaces store
+        return  $ mconcat $ map tetraSoupOfInterface is
+
+
+-- | Slurp a Tetra Soup from an interface.
+tetraSoupOfInterface :: InterfaceAA -> Soup E.Name
+tetraSoupOfInterface ii
+ | Just mmTetra <- interfaceTetraModule ii
+ = Soup.soupOfModule E.NameQualified mmTetra
+
+ | otherwise
+ = error "no interface"
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Extract metadata from an interface.
@@ -241,7 +266,7 @@ supersOfInterface ii
          -- Super was defined as a top-level binding in the current module.
          | Just (aType, aValue, nBoxes) <- Map.lookup n nsLocalArities
          , Just tTetra                  <- Map.lookup n ntsTetra
-         = ImportValueModule modName n tTetra (Just (aType, aValue, nBoxes))
+         = ImportValueModule modName n tTetra Nothing (Just (aType, aValue, nBoxes))
 
          -- Super was imported into the current module from somewhere else.
          -- Pass along the same import declaration to the client.
@@ -267,4 +292,5 @@ supersOfInterface ii
 
  | otherwise
  = Map.empty
+
 

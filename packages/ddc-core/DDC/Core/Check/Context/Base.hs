@@ -46,6 +46,7 @@ module DDC.Core.Check.Context.Base
         , lowerTypes)
 where
 import DDC.Core.Check.Context.Elem
+import DDC.Core.Env.Soup                (Soup)
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT
@@ -59,11 +60,11 @@ import qualified DDC.Type.Env           as Env
 import Data.Maybe
 import Data.IntMap.Strict               (IntMap)
 import Data.Map                         (Map)
+import Data.Set                         (Set)
 import qualified Data.IntMap.Strict     as IntMap
+import qualified Data.Set               as Set
 
 import Prelude                          hiding ((<$>))
-
-
 
 -- Context --------------------------------------------------------------------
 -- | The type checker context.
@@ -73,8 +74,19 @@ import Prelude                          hiding ((<$>))
 --
 data Context n
         = Context 
-        { -- | Top level environment for terms.
-          contextEnvX           :: !(EnvX n)
+        { -- | Top-level soup of imported things.
+          contextSoup           :: !(Soup n)
+
+          -- | Specific names of types used from the soup.
+        , contextSoupUsedTypes  :: !(Set n)
+
+          -- | Specific names of terms used from the soup.
+        , contextSoupUsedTerms  :: !(Set n)
+
+          -- | Top level environment for terms.
+          --   TODO: remove this. EnvX should only be used for the local
+          --   environment as it has support for debruijn indexes.
+        , contextEnvX           :: !(EnvX n)
 
           -- | Fresh name generator for context positions.
         , contextGenPos         :: !Int
@@ -94,7 +106,7 @@ data Context n
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
- ppr (Context _ genPos genExists ls _solved)
+ ppr (Context _ _ _ _ genPos genExists ls _solved)
   =   text "Context "
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
@@ -104,13 +116,15 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
                         | i <- [0..]])
 
 
-
 -- Construction ---------------------------------------------------------------
 -- | An empty context.
-emptyContext :: Context n
+emptyContext :: Ord n => Context n
 emptyContext 
         = Context
-        { contextEnvX           = EnvX.empty
+        { contextSoup           = mempty
+        , contextSoupUsedTypes  = Set.empty
+        , contextSoupUsedTerms  = Set.empty
+        , contextEnvX           = EnvX.empty
         , contextGenPos         = 0
         , contextGenExists      = 0 
         , contextElems          = []
@@ -118,7 +132,7 @@ emptyContext
 
 
 -- | Wrap an EnvT into a Context.
-contextOfEnvT :: EnvT n -> Context n
+contextOfEnvT :: Ord n => EnvT n -> Context n
 contextOfEnvT envt
  = let  envx    = EnvX.empty
                 { EnvX.envxEnvT = envt }
@@ -126,7 +140,7 @@ contextOfEnvT envt
 
 
 -- | Wrap an `EnvX` into a context.
-contextOfEnvX :: EnvX n -> Context n
+contextOfEnvX :: Ord n => EnvX n -> Context n
 contextOfEnvX envx
         = emptyContext { contextEnvX = envx }
 
