@@ -58,7 +58,7 @@ resolveNamesInModule kenv tenv store mm
         case sequence eimportsDaVar of
          Left err       -> return $ Left [err]
 
-         Right importsDaVar
+         Right _importsDaVar
           -> return $ Right $ mm 
            { moduleImportTypes   
                 =  moduleImportTypes  mm 
@@ -76,11 +76,12 @@ resolveNamesInModule kenv tenv store mm
 
            , moduleImportCaps
                 =  moduleImportCaps mm
-                ++ importsCap deps
+                ++ importsCap deps }
 
-           , moduleImportValues  
-                =  moduleImportValues mm
-                ++ importsDaVar }
+--         Value imports now come from the soup.
+--           , moduleImportValues  
+--                =  moduleImportValues mm
+--                ++ importsDaVar }
 
 
 ---------------------------------------------------------------------------------------------------

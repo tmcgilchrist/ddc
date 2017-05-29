@@ -91,7 +91,12 @@ importSoup soup mm
     = let
         mivsBase  = Map.fromList $ moduleImportValues mm
         mivsMore  = Map.fromList 
-                  $ [ (nLocal, ImportValueModule mn nSpecific t (Just nLocal) Nothing)
+                  $ [ ( nSpecific
+                      , ImportValueModule mn nSpecific t 
+                                (if nLocal /= nSpecific 
+                                        then Just nLocal
+                                        else Nothing)
+                                Nothing)
                     | (nLocal, mn, nSpecific, t) 
                         <- flattenSoupMap $ soupTermTypes soup ]
 
@@ -99,6 +104,7 @@ importSoup soup mm
  }
 
 
+-- | Flatten the map in one of the fields of a soup into a flat list.
 flattenSoupMap 
         :: Ord n
         => Map n (Map ModuleName (n, Type n))
@@ -109,6 +115,7 @@ flattenSoupMap mm
    | ((nBase, mn), (nSpecific, t)) <- Map.toList $ flatten mm ]
 
 
+-- | Flatten a map of maps.
 flatten :: (Ord a, Ord b)
         =>  Map a (Map b c) -> Map (a, b) c
 flatten mp

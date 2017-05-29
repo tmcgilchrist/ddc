@@ -73,6 +73,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         = ctx   { contextSoupUsedTerms
                                 = Set.insert nameSpecific (contextSoupUsedTerms ctx) }
 
+                -- Replace the local name by the module specific name.
                 returnX a
                         (\z -> XVar z (UName nameSpecific))
                         tActual

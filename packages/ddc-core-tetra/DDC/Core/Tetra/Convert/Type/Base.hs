@@ -6,10 +6,12 @@ module DDC.Core.Tetra.Convert.Type.Base
         , convertBindNameM)
 where
 import DDC.Core.Tetra.Convert.Error
+import DDC.Core.Module
 import DDC.Type.Exp
 import DDC.Type.DataDef
 import DDC.Control.Check                        (throw)
 import DDC.Type.Env                             (KindEnv)
+import Data.List
 import Data.Set                                 (Set)
 import Data.Map.Strict                          (Map)
 import qualified DDC.Type.Env                   as Env
@@ -54,10 +56,15 @@ convertBindNameM :: E.Name -> ConvertM a A.Name
 convertBindNameM nn
  = case nn of
         E.NameVar str 
-          -> return $ A.NameVar str
+         -> return $ A.NameVar str
 
         E.NameExt n str      
-          -> do  n'      <- convertBindNameM n
-                 return  $ A.NameExt n' str
+         -> do  n'      <- convertBindNameM n
+                return  $ A.NameExt n' str
+
+        E.NameQualified (ModuleName parts) (E.NameVar str)
+         ->     return  $ A.NameVar (intercalate "_" parts ++ "_" ++ str)
 
         _ -> throw $ ErrorInvalidBinder nn
+
+

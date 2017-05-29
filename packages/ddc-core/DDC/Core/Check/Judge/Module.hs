@@ -12,7 +12,7 @@ import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Control.Check                (runCheck, throw)
-import DDC.Core.Env.Soup                ()                      -- TODO: souped.
+import qualified DDC.Core.Env.Soup      as Soup
 
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -247,7 +247,7 @@ checkModuleM !config !soup mm@ModuleCore{} !mode
         xx_annot  <- reannotateM applyToAnnot xx_solved
 
         -- Build new module with infered annotations ------
-        let mm_inferred
+        let mm_rebuild
                 = mm
                 { moduleExportTypes     = esrcsType'
                 , moduleImportTypes     = nitsImportType'
@@ -256,6 +256,16 @@ checkModuleM !config !soup mm@ModuleCore{} !mode
                 , moduleImportValues    = ntsImportValue'
                 , moduleTypeDefsLocal   = nktsLocalTypeDef'
                 , moduleBody            = xx_annot }
+
+        -- Attach imports for terms that we used from the soup.
+        let soup_restricted
+                = Soup.restrictSoup 
+                        (contextSoupUsedTypes ctx)
+                        (contextSoupUsedTerms ctx)
+                        soup
+
+        let mm_inferred
+                = Soup.importSoup soup_restricted mm_rebuild
 
 
         -- Check that each exported signature matches the type of its binding.

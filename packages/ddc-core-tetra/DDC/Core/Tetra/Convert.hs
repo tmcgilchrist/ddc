@@ -27,6 +27,7 @@ import DDC.Type.DataDef
 import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
+import Data.List
 import DDC.Control.Check                                (throw, evalCheck)
 import Data.Map                                         (Map)
 import qualified Data.Map.Strict                        as Map
@@ -260,6 +261,11 @@ convertImportNameM n
  = case n of
         E.NameVar str   -> return $ A.NameVar str
         E.NameCon str   -> return $ A.NameCon str
+
+        -- TODO: merge impl with convertBindNameM
+        E.NameQualified (ModuleName parts) (E.NameVar str)
+         ->     return  $ A.NameVar (intercalate "_" parts ++ "_" ++ str)
+
         _               -> throw  $ ErrorInvalidBinder n
 
 
