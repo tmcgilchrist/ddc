@@ -34,22 +34,22 @@ trainCons (c1: Car s p) (cs2: List (Car s p)): List (Car s p)
  | otherwise
  = case cs2 of
         Nil
-         -> Cons c1 Nil
+         → Cons c1 Nil
 
         Cons c2 cs2'
-         |  CUps ups1   <- c1
-         ,  CUps ups2   <- c2
-         -> Cons (CUps (upsCombine ups1 ups2)) cs2'
+         | CUps ups1  ← c1
+         , CUps ups2  ← c2
+         → Cons (CUps (upsCombine ups1 ups2)) cs2'
 
-         |  otherwise
-         -> Cons c1 cs2
+         | otherwise
+         → Cons c1 cs2
 
 
 -- | Append two trains.
 trainAppend (ccA ccB: List (Car s p)): List (Car s p)
  = case ccA of
-        Nil             -> ccB
-        Cons cA csA     -> trainAppend' cA csA ccB
+        Nil             → ccB
+        Cons cA csA     → trainAppend' cA csA ccB
 
 
 -- TODO: Inlining this into trainAppend as a where-binding causes a type
@@ -60,16 +60,16 @@ trainAppend'
  = case cs1 of
         -- Combine the current state with the first car on the second train.
         Nil
-         -> trainCons c1 cc2
+         → trainCons c1 cc2
 
         -- Walk forward over the first train, combining ups's as we go.
         Cons c1' cs1'
-         |  CUps ups1  <- c1
-         ,  CUps ups1' <- c1'
-         -> trainAppend' (CUps (upsCombine ups1 ups1')) cs1' cc2
+         | CUps ups1  ← c1
+         , CUps ups1' ← c1'
+         → trainAppend' (CUps (upsCombine ups1 ups1')) cs1' cc2
 
-         |  otherwise
-         -> Cons c1 (trainAppend' c1' cs1' cc2)
+         | otherwise
+         → Cons c1 (trainAppend' c1' cs1' cc2)
 
 
 -- | Bump a train due to pushing it under an abstraction with the
@@ -78,33 +78,33 @@ trainBump
         (ns: List Name)
         (cs: List (Car s p)): List (Car s p)
  = case cs of
-        Nil     -> Nil
+        Nil     → Nil
 
         Cons (CSim snv) cs'
-         -> trainCons (CSim (snvBump ns snv)) $ trainBump ns cs'
+         → trainCons (CSim (snvBump ns snv)) $ trainBump ns cs'
 
         Cons (CRec snv) cs'
-         -> trainCons (CRec (snvBump ns snv)) $ trainBump ns cs'
+         → trainCons (CRec (snvBump ns snv)) $ trainBump ns cs'
 
         Cons (CUps ups) cs'
-         -> trainCons (CUps (upsBump ns ups)) $ trainBump ns cs'
+         → trainCons (CUps (upsBump ns ups)) $ trainBump ns cs'
 
 
 -- | Wrap an expression in a substitution train.
 --   If the expression is a plain
 trainApply (cs1: List (Car s p)) (xx: Exp s p): Exp s p
- | Nil  <- cs1
+ | Nil  ← cs1
  = xx
 
  | otherwise
  = case xx of
-        XRet xs         -> XRet (map (trainApply cs1) xs)
-        XRef (RMac n)   -> xx
-        XRef (RSym n)   -> xx
-        XRef (RPrm n)   -> xx
-        XVar name depth -> trainApplyVar cs1 name depth
-        XSub cs2  x2    -> trainApply (trainAppend cs2 cs1) x2
-        _               -> XSub cs1 xx
+        XRet xs         → XRet (map (trainApply cs1) xs)
+        XRef (RMac n)   → xx
+        XRef (RSym n)   → xx
+        XRef (RPrm n)   → xx
+        XVar name depth → trainApplyVar cs1 name depth
+        XSub cs2  x2    → trainApply (trainAppend cs2 cs1) x2
+        _               → XSub cs1 xx
 
 
 -- Apply a train onto a variable of a given name and depth.
@@ -113,25 +113,25 @@ trainApplyVar
         (name: Name) (depth: Nat): Exp s p
  = case cs of
         Nil
-         -> XVar name depth
+         → XVar name depth
 
         Cons (CSim snv) cs'
-         -> trainApply cs' (snvApplyVar False snv name depth)
+         → trainApply cs' (snvApplyVar False snv name depth)
 
         Cons (CRec snv) cs'
-         -> trainApply cs' (snvApplyVar True  snv name depth)
+         → trainApply cs' (snvApplyVar True  snv name depth)
 
         Cons (CUps ups) cs'
-         -> trainApply cs' (upsApplyVar ups name depth)
+         → trainApply cs' (upsApplyVar ups name depth)
 
 
 -- Car ------------------------------------------------------------------------
 -- | Check if a substitution car is empty.
 carIsEmpty (c: Car s p): Bool
  = case c of
-        CSim snv -> snvIsEmpty snv
-        CRec snv -> snvIsEmpty snv
-        CUps ups -> upsIsEmpty ups
+        CSim snv → snvIsEmpty snv
+        CRec snv → snvIsEmpty snv
+        CUps ups → upsIsEmpty ups
 
 
 -- Snv ------------------------------------------------------------------------
@@ -143,8 +143,8 @@ snvOfNamesArgs (ns: List Name) (xs: List (Exp s p)): Snv s p
 -- | Check if the given substitution is empty.
 snvIsEmpty ((SSnv bs): Snv s p): Bool
  = case bs of
-        Nil     -> True
-        _       -> False
+        Nil     → True
+        _       → False
 
 
 -- | Bump a substitution due to pushing it under an abstraction with
@@ -157,13 +157,13 @@ snvBump (ns: List Name)
                 (names: List Name)
                 (b:     ((Name, Nat), Exp s p))
                 :       Maybe ((Name, Nat), Exp s p)
-         | ((name, depth), x) <- b
+         | ((name, depth), x) ← b
          , elem name names
          = Nothing
 
-         | ((name, depth), x) <- b
+         | ((name, depth), x) ← b
          = Just ( (name, depth + (if elem name names then 1 else 0))
-                , upsApply (UUps (map (\name' -> ((name', 0), 1)) names)) x)
+                , upsApply (UUps (map (\name' → ((name', 0), 1)) names)) x)
 
 
 -- | Wrap a train consisting of a single simultaneous substitution
@@ -172,9 +172,9 @@ snvApply
         (rec: Bool)
         (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
  = case bs of
-        Nil     -> xx
-        _ | rec -> trainApply (Cons (CRec snv) Nil) xx
-        _       -> trainApply (Cons (CSim snv) Nil) xx
+        Nil     → xx
+        _ | rec → trainApply (Cons (CRec snv) Nil) xx
+        _       → trainApply (Cons (CSim snv) Nil) xx
 
 
 -- | Apply a substitution to a variable of a given name and depth.
@@ -184,35 +184,35 @@ snvApplyVar
         (name: Name) (depth: Nat): Exp s p
  = case bs of
         Nil
-         -> XVar name depth
+         → XVar name depth
 
         Cons b'@((name', depth'), x') bs'
-         |  name  == name'
-         ,  depth == depth'
-         -> if rec then XSub (Cons (CRec snv) Nil) x'
+         | name  == name'
+         , depth == depth'
+         → if rec then XSub (Cons (CRec snv) Nil) x'
                    else x'
 
-         |  name   == name'
-         ,  depth  >  depth'
-         -> XVar name (depth - 1)
+         | name   == name'
+         , depth  >  depth'
+         → XVar name (depth - 1)
 
-         |  otherwise
-         -> snvApplyVar rec (SSnv bs') name depth
+         | otherwise
+         → snvApplyVar rec (SSnv bs') name depth
 
 
 -- Ups ------------------------------------------------------------------------
 -- | Check if the given ups is empty.
 upsIsEmpty ((UUps bs): Ups): Bool
  = case bs of
-        Nil     -> True
-        _       -> False
+        Nil     → True
+        _       → False
 
 
 -- | Wrap an expression in a train consisting of a single ups.
 upsApply (ups@(UUps us): Ups) (xx: Exp s p): Exp s p
  = case us of
-        Nil     -> xx
-        _       -> trainApply (Cons (CUps ups) Nil) xx
+        Nil     → xx
+        _       → trainApply (Cons (CUps ups) Nil) xx
 
 
 -- | Apply an ups to a variable.
@@ -222,34 +222,32 @@ upsApplyVar ((UUps bs): Ups) (name: Name) (ix: Nat): Exp s n
          -> XVar name ix
 
         Cons u'@((name', depth'), inc') bs'
-         |  name   == name'
-         ,  depth' <= ix
-         -> upsApplyVar (UUps bs') name (ix + inc')
+         | name   == name'
+         , depth' <= ix
+         → upsApplyVar (UUps bs') name (ix + inc')
 
-         |  otherwise
-         -> upsApplyVar (UUps bs') name ix
+         | otherwise
+         → upsApplyVar (UUps bs') name ix
 
 
 -- | Bump ups (substitution lifting) due to pushing it
 --   under an absraction with the given named binders.
 upsBump (ns: List Name) ((UUps bs): Ups): Ups
- = UUps $ mapMaybe (upsBump1 ns) bs
+ = UUps $ map (upsBump1 ns) bs
  where
         upsBump1 (ns:   List Name)
                  (l:    ((Name, Nat), Nat))
-                 :      Maybe ((Name, Nat), Nat)
-         | ((n, d), inc) <- l
+                 :      ((Name, Nat), Nat)
+         | ((n, d), inc) ← l
          , elem n ns
-         = if d == 0
-                then Nothing
-                else Just ((n, d + 1), inc)
+         = ((n, d + 1), inc)
 
          | otherwise
-         = Just l
+         = l
 
 
 -- | Combine two lists of ups.
-upsCombine : Ups -> Ups -> Ups
+upsCombine : Ups → Ups → Ups
 upsCombine (UUps ts1) (UUps ts2)
  = UUps (foldr upsCombineBump ts2 ts1)
 
@@ -258,20 +256,20 @@ upsCombine (UUps ts1) (UUps ts2)
 --   Applying the result to an expression will achieve the same result as
 --   applying the whole list and then the extra one.
 upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
- | ((name, depth), inc) <- b
+ | ((name, depth), inc) ← b
  = case bs of
         -- We cannot combine the new bump with anything else,
         -- so add it to the end of the list.
         Nil
-         -> Cons b Nil
+         → Cons b Nil
 
         Cons b'@((name', depth'), inc') bs'
          -- Combine the new bump with an existing one of the same name.
-         |  name  == name'
-         ,  depth == depth'
-         -> Cons ((name, depth'), inc + inc') bs'
+         | name  == name'
+         , depth == depth'
+         → Cons ((name, depth'), inc + inc') bs'
 
          -- Try to combine the new bump with the tail of the list.
-         |  otherwise
-         -> Cons b' (upsCombineBump b bs')
+         | otherwise
+         → Cons b' (upsCombineBump b bs')
 

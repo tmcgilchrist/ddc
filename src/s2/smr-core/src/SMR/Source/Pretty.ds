@@ -36,12 +36,13 @@ data Context where
 pprExp' [s p: Data]
         {Pretty s} {Pretty p}
         (ctx: Context) (xx: Exp s p): Text
+
  | ContextBody  <- ctx
  = case xx of
-        -- application
-        XApp x1 x2
-         |  pprExpNeedsParensAsArg x2
-         -> pprExp' ContextLeft x1 %% "$" %% pprExp' ContextBody x2
+--        -- application
+--        XApp x1 x2
+--         |  pprExpNeedsParensAsArg x2
+--         -> pprExp' ContextLeft x1 %% "$" %% pprExp' ContextBody x2
 
 
         _ -> pprExp' ContextLeft xx
@@ -71,12 +72,13 @@ pprExp' [s p: Data]
 
         -- keyed expressions
         XKey k x
-         -> pprKey k %% pprExp' ContextArg x
+         ->  pprKey k %% pprExp' ContextArg x
 
 
  | ContextFun   <- ctx
  = case xx of
         XAbs _ _    -> parens $ pprExp' ContextBody xx
+        XSub _ _    -> parens $ pprExp' ContextBody xx
         _           -> pprExp' ContextLeft xx
 
  | ContextArg   <- ctx

@@ -1,19 +1,19 @@
 -- Church encoding of basic data types and operators.
 
 -- Fixpoint --------------------------------------------------------------------
-@church-fix f           = (\x. f (x x)) (\x. f (x x));
+@church-fix ~f          = (\~x. f (x x)) (\~x. f (x x));
 
 
 -- Booleans --------------------------------------------------------------------
-@church-true   x y      = x;
-@church-false  x y      = y;
-@church-if     a b c    = a b c;
-@church-and    x y      = @church-if x y @church-false;
-@church-or     x y      = @church-if x @church-true  y;
+@church-true   ~x ~y    = x;
+@church-false  ~x ~y    = y;
+@church-if     a ~b ~c  = a b c;
+@church-and    ~x ~y    = @church-if x y @church-false;
+@church-or     ~x ~y    = @church-if x @church-true  y;
 
 
 -- Pairing ---------------------------------------------------------------------
-@church-pair   m n
+@church-pair   ~m ~n
  = \b. @church-if b m n;
 
 @church-fst p
@@ -55,7 +55,7 @@
 
 -- Multiplication.
 @church-mul m n
- = \z. n (m z);
+ = \z. m (n z);
 
 -- Exponential.
 @church-exp m n
@@ -77,10 +77,10 @@
 @church-list-nil
  = \an ac. an;
 
-@church-list-cons x xs
+@church-list-cons ~x ~xs
  = \an ac. ac x xs;
 
-@church-list-case xs an ac
+@church-list-case xs ~an ~ac
  = xs an ac;
 
 @church-list-head    xx
