@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Examples &#8212; Shimmer 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Primitives" href="02-primitives.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>Shimmer 1.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Examples</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="02-primitives.html">Primitives</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="examples">
+<h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="lambda-terms">
+<h2>Lambda Terms<a class="headerlink" href="#lambda-terms" title="Permalink to this headline">¶</a></h2>
+<p>On starting up the Shimmer interpreter we can type expressions at the prompt without needing to write any declarations.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>$ smr
+Shimmer, version 1.0. The Turtle at the Bottom of the World.
+&gt; (\x. x x) %turtle
+%turtle %turtle
+</pre></div>
+</div>
+<p>Here we have used a lambda abstraction to create two turtles out of one. We can use another to construct four turtles in total.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>&gt; (\f. \x. f (f x)) (\x. x x) %turtle
+%turtle %turtle (%turtle %turtle)
+</pre></div>
+</div>
+<p>In both cases the <code class="docutils literal"><span class="pre">%turtle</span></code> is an uninterpreted symbol.</p>
+</div>
+<div class="section" id="no-name-capture">
+<h2>No Name Capture<a class="headerlink" href="#no-name-capture" title="Permalink to this headline">¶</a></h2>
+<p>Name capture during reduction is avoided by using the bump counter,
+as in this classic example:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>&gt; (\y. (\x. \y. x) y)
+\y.\y.y^1
+</pre></div>
+</div>
+<p>Here the variable reference <code class="docutils literal"><span class="pre">y^1</span></code> refers to the inner-most binder of name <cite>y</cite>, skipping the first one. Likewise, with:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>&gt; (\y. (\x. \y. \y. x) y)
+\y.\y.y^2
+</pre></div>
+</div>
+<p>The variable reference <code class="docutils literal"><span class="pre">y^2</span></code> now refers to the inner-most binder of name <cite>y</cite>, skipping the first two.</p>
+</div>
+<div class="section" id="church-encoding">
+<h2>Church Encoding<a class="headerlink" href="#church-encoding" title="Permalink to this headline">¶</a></h2>
+<p>The following program builds up enough Church encoded functional goodness to almost do something useful:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>@true  x y     = x;
+@false x y     = y;
+@if    a b c   = a b c;
+
+@zero          = \s. \z. z;
+@succ  n       = \s. \z. s (n s z);
+@one           = @succ @zero;
+@two           = @succ @one;
+@three         = @succ @two;
+@four          = @succ @three;
+
+@is-zero n     = n (\x. @false) @true;
+
+@pair      m n = \b. @if b m n;
+@pair-fst  p   = p @true;
+@pair-snd  p   = p @false;
+@pair-zero     = @pair @zero @zero;
+@pair-succ p   = @pair (@pair-snd p) (@succ (@pair-snd p));
+
+@pred  n       = @pair-fst (n @pair-succ @pair-zero);
+@add   m n     = \s. \z. m s (n s z);
+@sub   m n     = n @pred m;
+@mul   m n     = \z. n (m z);
+
+@fac n
+ = @if  (@is-zero n)
+         @one
+        (@mul n (@fac (@sub n @one)));
+</pre></div>
+</div>
+<p><a class="reference download internal" href="../_downloads/03-ChurchEncoding.smr" download=""><code class="xref download docutils literal"><span class="pre">Download</span></code></a></p>
+<p>Loading this file into the Shimmer interpreter allows us to evaluate the expressions. The default evaluation method is normal order reduction, which completely normalizes the expression, including reducing inside the bodies of lambda abstractions:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>$ smr -i 03-ChurchEncoding.smr
+Shimmer, version 1.0. The Turtle at the Bottom of the World.
+&gt; @fac @three
+\z.\z.z^1 (z^1 (z^1 (z^1 (z^1 (z^1 z)))))
+</pre></div>
+</div>
+<p>The result is the Church Encoded natural number 6 = 1 × 2 × 3.</p>
+</div>
+<div class="section" id="primitive-natural-numbers">
+<h2>Primitive Natural Numbers<a class="headerlink" href="#primitive-natural-numbers" title="Permalink to this headline">¶</a></h2>
+<p>Here is another version of the factorial program, but this time using primitive boolean values and natural numbers. In data representation and operators are those provided by the Shimmer implementation rather than being coded up from lambda expressions.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>@nat-fac n
+ = #if  (#nat-eq #nat-0 n)
+         #nat-1
+        (#nat-mul n (@nat-fac (#nat-sub n #nat-1)));
+</pre></div>
+</div>
+<p>We can invoke this declaration as follows:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>&gt; @nat-fac #nat-3
+#nat-6
+
+&gt; @nat-fac #nat-10
+#nat-3628800
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="02-primitives.html">Primitives</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shimmer Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>

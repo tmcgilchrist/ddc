@@ -1,0 +1,114 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Definition &#8212; Shimmer 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Primitives" href="02-primitives.html" />
+    <link rel="prev" title="Shimmer" href="../index.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>Shimmer 1.0 documentation</span></a></h1>
+        <h2 class="heading"><span>Definition</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../index.html">Shimmer</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="02-primitives.html">Primitives</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="definition">
+<h1>Definition<a class="headerlink" href="#definition" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="syntax">
+<h2>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>             (Abstract Syntax)     (Concrete Syntax)   (Description)
+
+Name (n) ::= (printable names)
+Nat      ::= 0 | 1 | 2 | ...
+
+Decl (d) ::= decl   Name Exp       r = e;              Declaration
+
+Exp  (e) ::= var    Name Nat       x^n                 Variable
+          |  abs    Name Exp       \x. e               Abstraction
+          |  app    Exp  Exp       e e                 Application
+          |  ref    Ref            r                   Reference
+          |  ...                   (e)                 Parenthesis
+
+Ref  (r) ::= macro  Name           @name               Macro Reference
+          |  symbol Name           %symbol             Symbol Reference
+          |  prim   Name           #prim               Primitive Reference
+          |  set    Name           +name               Set Reference
+          |  meta   Nat            ?123                Meta Reference
+</pre></div>
+</div>
+<p>A Name is a printable name such as <code class="docutils literal"><span class="pre">Hello</span></code>, <code class="docutils literal"><span class="pre">list-foldl</span></code> or <code class="docutils literal"><span class="pre">nat-59</span></code>. Regular names must start with a letter and can contain letters, numbers, and the dash <code class="docutils literal"><span class="pre">-</span></code> character. Arbitrary character strings can be used as names by enclosing them in double quotes, like <code class="docutils literal"><span class="pre">&quot;what</span> <span class="pre">evar&quot;</span></code>.</p>
+<p>A Nat is a natural number, which is used when defining the names of variables below.</p>
+<p>A Decl is a top-level declaration that associates a reference with an expression. In the concrete syntax the reference and expression are separated by an equals sign <code class="docutils literal"><span class="pre">=</span></code>, and the declaration is terminated by a semicolon <code class="docutils literal"><span class="pre">;</span></code>. Macro and Set references can be declared in this way, but not the others.</p>
+<p>An Exp is an expression, which can be a variable, function abstraction, function application, reference. In the concrete syntax we also include parenthesized expressions in the usual way. With variables, the Nat is called the <em>bump counter</em> and used to refer to refer to a name shadowed by another, so in <code class="docutils literal"><span class="pre">(\x.\x.\x.x^2)</span></code> the inner variable refers to the first parameter. If the bump counter it is zero it can be omitted. In an abstraction, the scope of the parameter variable extends to as far right as possible. Function application associates to the left, as it always has.</p>
+<p>A Ref is a reference, which can be a macro-reference, set-reference, symbol-reference, primitive-reference or meta-reference.</p>
+<p>Macro references are silently unfolded during evaluation, but the expectation is that the unfolding will be done in a lazy way so that the resulting term will not become too large. The body of a macro can reference itself, which can be used to write recursive macro programs.</p>
+<p>Symbol references refer to uninterpreted names. These are like data constructors in other languages, except that they need not be defined beforehand.</p>
+<p>Primitive references refer to implementation dependent primitive values and operators. The computers we have on our desks implement many wonderful operations besides function application. Floating point values and operations are referred to using these primitive names. Shimmer implementations may also include various evaluation methods and program transformations which can be given primitive names as well.</p>
+<p>Set references are magic to collect the names of things defined across multiple Shimmer files. When you load two Shimmer files that declare a set reference of the same name then the two bound things are combined into a list, so that you only have one thing overall.</p>
+<p>Meta references are magic to work with fresh names. The generation of a fresh name does not break confluence of evaluation, provided the order in which the names were generated cannot be observed. A meta reference refers to a freshly generated name, but the particular way the reference is presented depends on its position in the program rather than the name itself. Meta references hide your impurity from you, so that you cannot know how deeply you have sinned.</p>
+</div>
+<div class="section" id="sugar">
+<h2>Sugar<a class="headerlink" href="#sugar" title="Permalink to this headline">¶</a></h2>
+<p>The following standard syntactic sugars are provided, to aid those that must write Shimmer code by hand.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>r x1 x2 .. xn = e   ≡   r = \x1. \x2. .. \xn = e     (function binding syntax)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../index.html">Shimmer</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="02-primitives.html">Primitives</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Shimmer Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>
