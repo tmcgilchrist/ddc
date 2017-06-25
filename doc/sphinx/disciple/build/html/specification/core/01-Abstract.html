@@ -1,0 +1,160 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Abstract Syntax &#8212; Disciple 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Static Semantics" href="02-Statics.html" />
+    <link rel="prev" title="Core Language" href="../01-Core.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>Disciple 0.4.3 documentation</span></a></h1>
+        <h2 class="heading"><span>Abstract Syntax</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../01-Core.html">Core Language</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="02-Statics.html">Static Semantics</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="abstract-syntax">
+<h1>Abstract Syntax<a class="headerlink" href="#abstract-syntax" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="names">
+<h2>Names<a class="headerlink" href="#names" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Con   (c)   ⟶ (named constructors)
+Var   (n)   ⟶ (named variables)
+</pre></div>
+</div>
+</div>
+<div class="section" id="types">
+<h2>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Type (τ,k,σ)
+        ::= TyCon                         (type constructors)
+         |  Var                           (type variables)
+         |  &#39;λ&#39; Var &#39;:&#39; Type &#39;.&#39; Type     (type abstraction)
+         |  Type Type                     (type application)
+
+TyCon   ::= Con                           (primitive type constructors)
+         |  &#39;Data&#39; | &#39;Effect&#39; | &#39;Region&#39;  (basic kind constructors)
+         |  &#39;(→)&#39;  | &#39;Unit&#39;   | &#39;Void&#39;    (basic data type constructors)
+         |  &#39;Read&#39; | &#39;Write&#39;  | &#39;Alloc&#39;   (basic effect type constructors)
+         |  &#39;⋁&#39; Type Nat                  (least upper bound of types)
+         |  &#39;⊥&#39; Type                      (least element of a type)
+         |  &#39;∀&#39; Type                      (universal quantification)
+</pre></div>
+</div>
+<p>The basic kind constructors are <code class="docutils literal"><span class="pre">Data</span></code>, <code class="docutils literal"><span class="pre">Effect</span></code> and <code class="docutils literal"><span class="pre">Region</span></code> for the kind of data, effect and region type respectively. The function type constructor <code class="docutils literal"><span class="pre">(→)</span></code> is usally written infix in sugared presentations. The <code class="docutils literal"><span class="pre">Unit</span></code> type classifies a set of values with the single element <code class="docutils literal"><span class="pre">()</span></code>. The <code class="docutils literal"><span class="pre">Void</span></code> type classifies the empty set.</p>
+<p>The <code class="docutils literal"><span class="pre">⋁</span></code> type constructor is used to express type sums, where <code class="docutils literal"><span class="pre">⊥</span></code> is an empty sum. Both are annotated with the kind of their result types.</p>
+<p>The quantifier constructor <code class="docutils literal"><span class="pre">∀</span></code> is annotated with the kind of its result type.</p>
+</div>
+<div class="section" id="syntactic-sugar-for-types">
+<h2>Syntactic Sugar for Types<a class="headerlink" href="#syntactic-sugar-for-types" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>t1 → t2       ≡ (→) t1 t2
+
+t1 + t2       ≡ ⋁ k 2 t1 t2
+t1 + t2 + t3  ≡ ⋁ k 3 t1 t2 t3
+
+⊥             ≡ ⊥ k
+
+∀ n : k. t    ≡ (∀ k) (λ n : k. t)
+</pre></div>
+</div>
+<p>The function type constructor <code class="docutils literal"><span class="pre">(→)</span></code> is usually written infix.</p>
+<p>When the kind is clear from context we use the infix <code class="docutils literal"><span class="pre">(+)</span></code> operator to express type sums.</p>
+<p>When the kind is clear from context, the kind argument on <code class="docutils literal"><span class="pre">(⊥)</span></code> is elided.</p>
+<p>Quantifiers that bind names are desugared to an application of the associated type constructor and a type abstraction. Representing the different quantifiers as constructors allows us to retain a single binding form for types.</p>
+</div>
+<div class="section" id="terms">
+<h2>Terms<a class="headerlink" href="#terms" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Exp (e)
+       ::= DaCon                                (data constructor)
+        |  Var                                  (variable)
+
+        |  &#39;λ&#39; Var &#39;:&#39; Type &#39;.&#39; Exp             (term abstraction)
+        |  Exp Exp                              (term application)
+
+        |  &#39;Λ&#39; Var &#39;:&#39; Type &#39;.&#39; Exp             (type abstraction)
+        |  Exp Type                             (type application)
+
+        |  &#39;let&#39;    Bind   &#39;in&#39; Exp             (let binding)
+        |  &#39;letrec&#39; BindT+ &#39;in&#39; Exp             (recursive let binding)
+
+        |  &#39;case&#39;   Exp  &#39;of&#39; Alt+              (case matching)
+
+        |  &#39;private&#39; Var &#39;with&#39; Sig+ &#39;in&#39; Exp   (region introduction)
+
+        |  &#39;extend&#39;  Var
+             &#39;using&#39; Var &#39;with&#39; Sig+ &#39;in&#39; Exp   (region extension)
+
+        |  &#39;weakeff&#39; Type &#39;in&#39; Exp              (effect weakening)
+        |  &#39;box&#39; Exp                            (box a computation)
+        |  &#39;run&#39; Exp                            (run a suspension)
+
+DaCon  ::= &#39;()&#39;                                 (builtin unit data constructor)
+        |   Con                                 (named data constructor)
+
+Bind   ::= Var &#39;=&#39;Exp                           (binding)
+BindT  ::= Var &#39;:&#39; Type &#39;=&#39; Exp                 (typed binding)
+Sig    ::= Var &#39;:&#39; Type                         (type signature)
+
+Alt    ::= Pat &#39;→&#39; Exp                          (case alternative)
+Pat    ::= _ | DaCon Sig+                       (case pattern)
+</pre></div>
+</div>
+<p>The syntax of constructors and variables, term abstraction and application, type abstraction and application, case-matching and let-binding is standard.</p>
+<p>The <code class="docutils literal"><span class="pre">private</span></code> construct introduces a new region variable along with capabilities of the given signatures. Both the region variable and names of the capabilities are in scope in the body expression.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../01-Core.html">Core Language</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="02-Statics.html">Static Semantics</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Disciple Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>

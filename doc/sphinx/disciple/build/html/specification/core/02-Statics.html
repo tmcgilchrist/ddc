@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Static Semantics &#8212; Disciple 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Release Notes" href="../../section/04-Release.html" />
+    <link rel="prev" title="Abstract Syntax" href="01-Abstract.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>Disciple 0.4.3 documentation</span></a></h1>
+        <h2 class="heading"><span>Static Semantics</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="01-Abstract.html">Abstract Syntax</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../../section/04-Release.html">Release Notes</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="static-semantics">
+<h1>Static Semantics<a class="headerlink" href="#static-semantics" title="Permalink to this headline">¶</a></h1>
+<p>The following typing rules are for the explicitly typed form of the core language. We assume that all binders have already been annotated by their types and kinds.</p>
+<div class="section" id="kinds-of-types">
+<h2>Kinds of Types<a class="headerlink" href="#kinds-of-types" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>[ Δ ⊢ t :: k ]
+</pre></div>
+</div>
+<p>Under kind environment Δ type t has kind k</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          TyCon has kind k
+ (KiCon) ─────────────────
+           Δ ⊢ TyCon :: k
+
+Con    :: ...
+(→)    :: Data → Data → Data
+Unit   :: Data
+Void   :: Data
+⋁ k n  :: k1 → k2 ... → kn → k
+⊥ k    :: k
+∀ k    :: (k → Data) → k → Data
+</pre></div>
+</div>
+<p>The kinds of type constructors are given by the above table. The kinds of the primitive type constructors Con are set by the language fragment.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          n:k ∈ Δ
+(KiVar) ────────────
+         Δ ⊢ n :: k
+</pre></div>
+</div>
+<p>The kinds of named type variables are taken from the kind environment.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>             Δ, n:k1 ⊢ t :: k2
+(KiAbs) ─────────────────────────────
+        Δ ⊢ (λ n : k1. t) :: (k1 → k2)
+</pre></div>
+</div>
+<p>For a type abstraction, the kind of the parameter is added to the kind environment when checking the body.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>        Δ ⊢ t1 :: (k1 → k2)    Δ ⊢ t2 :: k1
+(KiApp) ────────────────────────────────────
+               Δ ⊢ (t1 t2) :: k2
+</pre></div>
+</div>
+<p>For a type-type application, the kind of the parameter of the type function (k1) must match the kind of the argument.</p>
+</div>
+<div class="section" id="types-of-terms">
+<h2>Types of Terms<a class="headerlink" href="#types-of-terms" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>[ Δ | Γ ⊢ e :: t : σ ]
+</pre></div>
+</div>
+<p>Under kind environment Δ and type environment Γ expression e has type t and effect σ.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>               x:t ∈ Γ
+(TyVar)  ────────────────────
+          Δ | Γ ⊢ x :: t ! ⊥
+</pre></div>
+</div>
+<p>The types of named variables are taken from the type environment. Referencing a variable is pure.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>           Δ ⊢ t1 :: Data      Δ | Γ, x:t1 ⊢ e :: t2 ! ⊥
+(TyAbs)  ─────────────────────────────────────────────────
+              Δ | Γ ⊢ (λ x : t1. e) :: (t1 → t2) ! ⊥
+</pre></div>
+</div>
+<p>For a term abstraction, the parameter type t1 must have kind Data. The type of the parameter is added to the type environment when checking the body e. The effect of the body must be pure. Forming a term abstraction is pure.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          Δ | Γ ⊢ e1 :: (t1 → t2) ! σ1    Δ | Γ ⊢ e2 :: t1 ! σ2
+(TyAppX) ───────────────────────────────────────────────────────
+                Δ | Γ ⊢ (e1 e2) :: t2 ! (σ1 + σ2)
+</pre></div>
+</div>
+<p>For a term-term application, the type of the function parameter τ1 must match the type of the argument. The effect of the overall application is the effect of evaluating both the functional expression (σ1) and argument expression (σ2).</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          a ∉ Δ     Δ ⊢ k1
+          Δ, a:k1 | Γ ⊢ e :: t2 ! ⊥    Δ ⊢ t2 :: Data
+(TyAbsT) ────────────────────────────────────────────────
+          Δ | Γ ⊢ (Λ a : k1. e) :: (∀ a : t1. t2)  !  ⊥
+</pre></div>
+</div>
+<p>For a type abstraction, the parameter kind must be well formed. The kind of the parameter is added to the type environment when checking the body e. The effect of the body must be pure. The type of the body must have kind Data. Forming a type abstraction is pure.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          Δ | Γ ⊢ e1 :: (∀ a : k1. t1) ! σ1    Δ ⊢ t2 :: k1
+(TyAppT) ────────────────────────────────────────────────────
+                  Δ | Γ ⊢ e1 t2 :: t1[t2/a] ! σ1
+</pre></div>
+</div>
+<p>For term-type application, the kind of the type parameter (k1) must match that of the type argument. The type argument is substituted for the formal parameter a in the body type (t1). The effect of the overall application is the effect of evaluating the functional expression (σ1).</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>         Δ | Γ ⊢ e1 :: t1 ! σ1    Δ | Γ, x1:t1 ⊢ e2 :: t2 ! σ2
+(TyLet) ─────────────────────────────────────────────────────────
+              Δ | Γ ⊢ (let x1 = e1 in e2) :: t2 ! σ1 + σ2
+</pre></div>
+</div>
+<p>The bound variable is in scope in the body of the let-binding. The effect of the overall expression is the effect of evaluating the bound expression and the body.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>           { Δ | Γ, { x_i : t_i }^i ⊢ e_i :: t_i ! ⊥ }^i
+             Δ | Γ, { x_i : t_i }^i ⊢ e&#39;  :: t&#39;  ! σ&#39;
+(TyLetRec) ──────────────────────────────────────────────────────────
+             Δ | Γ ⊢ (letrec { x_i : t_i = e_i }^i in e&#39;) :: t&#39; ! σ&#39;
+</pre></div>
+</div>
+<p>In a letrec every bound variable must be annotated with its type. All the bound variables are in scope in all the bound expressions. All bound expressions must have the types indivated by their corresponding type annotations. All bound expressions in a letrec must be pure. All bound variables are also in scope in the body, and the effect of the overall expression is the effect of evaluating its body.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>                    Δ | Γ ⊢ e1 :: t1 ! σ1
+(TyWeakEff) ───────────────────────────────────────
+             Δ | Γ ⊢ weakeff σ2 e1 :: t1 ! σ1 + σ2
+</pre></div>
+</div>
+<p>To weaken the effect of some term e1 we supply a new effect <cite>σ2</cite> which is added to the effect of of the original term <cite>σ1</cite>.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>             Δ | Γ ⊢ e :: t ! σ
+(TyBox)  ────────────────────────────
+          Δ | Γ ⊢ box e :: S σ t ! ⊥
+</pre></div>
+</div>
+<p>A boxed term has the type of a suspension, where the effect <cite>σ</cite> and return type <cite>t</cite> of the suspension are the corresponding effect and types of the term being boxed. A boxed term is pure.</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>          Δ | Γ ⊢ x1 :: S σ1 t1 ! σ2    Γ supports σ1
+(TyRun) ----------------------------------------------
+              Δ | Γ ⊢ run e1 :: t1  ! σ1 + σ2
+</pre></div>
+</div>
+<p>The term to run must have type matching <cite>S σ1 t1</cite>. The type of the result of running it is <cite>t1</cite>. The overall effect of the expression is the effect of computing the suspension <cite>σ2</cite> and the effect of running it <cite>σ1</cite>. The type environment <cite>Γ</cite> must contain capabilities that support the effects σ1.</p>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="01-Abstract.html">Abstract Syntax</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../../section/04-Release.html">Release Notes</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Disciple Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>

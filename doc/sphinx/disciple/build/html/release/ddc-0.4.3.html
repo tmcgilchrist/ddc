@@ -1,0 +1,198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Disciplined Disciple Compiler 0.4.3 (2016/09/06) (Current Version) &#8212; Disciple 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="The Disciplined Disciple Compiler 0.4.2 (2016/04/30)" href="ddc-0.4.2.html" />
+    <link rel="prev" title="Release Notes" href="../section/04-Release.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>Disciple 0.4.3 documentation</span></a></h1>
+        <h2 class="heading"><span>The Disciplined Disciple Compiler 0.4.3 (2016/09/06) (Current Version)</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../section/04-Release.html">Release Notes</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="ddc-0.4.2.html">The Disciplined Disciple Compiler 0.4.2 (2016/04/30)</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="the-disciplined-disciple-compiler-0-4-3-2016-09-06-current-version">
+<h1>The Disciplined Disciple Compiler 0.4.3 (2016/09/06) (Current Version)<a class="headerlink" href="#the-disciplined-disciple-compiler-0-4-3-2016-09-06-current-version" title="Permalink to this headline">¶</a></h1>
+<p>DDC is a research compiler used to investigate program transformation in the
+presence of computational effects. This is a development release. There is
+enough implemented to experiment with the language, but not enough to solve
+actual problems...        (unless you&#8217;re looking for a compiler to hack on).</p>
+<p>DDC compiles several related languages:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">Disciple Tetra (.ds)</p>
+<p>An implicitly typed strict functional language with region and effect
+typing. Uses effect reification (<cite>box</cite>) and reflection (<cite>run</cite>) casts to
+compose computations with differing effects. Effectful computations are
+classified by the <cite>S e a</cite> type, for some effect <cite>e</cite> and return type <cite>a</cite>.
+Although type inference is supported, one can also write explicit type
+abstractions and applications when needed. Higher ranked types are
+supported with annotations.</p>
+</li>
+<li><p class="first">Disciple Core Tetra (.dct)</p>
+<p>The desugared version of Disciple Tetra. All function application is in
+prefix form. This language also supports type inference, though the
+inferencer does not insert additional type quantifiers.</p>
+</li>
+<li><p class="first">Disciple Core Flow (.dcf)</p>
+<p>Application specific language with built-in support for Series expressions
+and Data Flow Fusion. This language and its associated transforms is used by
+the repa-plugin available on Hackage.</p>
+</li>
+<li><p class="first">Disciple Core Salt (.dcs)</p>
+<p>A fragment of Disciple Core that can be easily mapped onto C or LLVM code.
+The Salt language is first-order and does not support partial application.
+DDC transforms the higher level languages onto this one during code
+generation, though we can also write programs in it directly.</p>
+</li>
+</ul>
+</div></blockquote>
+<p>All core languages share the same abstract syntax tree (AST), type inferencer,
+and are amenable to many of the same program transformations. They differ only
+in the set of allowable language features, and which primitive types and
+operators are included.</p>
+<div class="section" id="main-changes-since-0-4-3">
+<h2>Main changes since 0.4.3<a class="headerlink" href="#main-changes-since-0-4-3" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Added desugaring of nested patterns and guards.</li>
+<li>Better type inference and desugaring for higher ranked types,
+which allows dictionaries for Functor, Applicative, Monad and friends
+to be written easily.</li>
+<li>Automatic insertion of run and box casts is now more well baked.</li>
+<li>Added code generation for partial applications of data constructors.</li>
+<li>Added support for simple type synonyms.</li>
+<li>Changed to Haskell-style syntax for lambda expressions.</li>
+<li>Automatic interrogation of LLVM compiler version, and generation
+of matching LLVM assembly syntax.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="what-works-in-this-release">
+<h2>What works in this release<a class="headerlink" href="#what-works-in-this-release" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Compilation for the Tetra, and Salt languages.</li>
+<li>Type checking and data flow fusion for the Flow language.</li>
+<li>Program transformations: Anonymize (remove names), Beta (substitute),
+Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
+nested bindings), Forward (let-floating), Namify (add names), Prune
+(dead-code elimination), Snip (eliminate nested applications), Rewrite
+rules, cross-module inlining.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="what-doesn-t">
+<h2>What doesn&#8217;t<a class="headerlink" href="#what-doesn-t" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>No storage management.
+There is a fixed 64MB heap and when you&#8217;ve allocated that much space the
+runtime just calls abort().</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="previous-releases">
+<h2>Previous Releases<a class="headerlink" href="#previous-releases" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>2016/04 DDC 0.4.2: Added code generation for higher order functions.</li>
+<li>2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.</li>
+<li>2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.</li>
+<li>2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.</li>
+<li>2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.</li>
+<li>2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.</li>
+<li>2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="immediate-plans">
+<h2>Immediate Plans<a class="headerlink" href="#immediate-plans" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Implement garbage collection.</li>
+<li>Implement basic name spacing.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="how-you-can-help">
+<h2>How you can help<a class="headerlink" href="#how-you-can-help" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Work through the tutorial on the web-site and send any comments to the
+mailing list.] <a class="reference external" href="http://disciple.ouroborus.net/wiki/Tutorial">http://disciple.ouroborus.net/wiki/Tutorial</a></li>
+<li>Say hello on the mailing list and we can help you get started on any of
+the main missing features. These are all interesting projects.</li>
+<li>Tell your friends.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="more-information">
+<h2>More Information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>See the web-site:        <a class="reference external" href="http://disciple.ouroborus.net">http://disciple.ouroborus.net</a></li>
+<li>Read the mailing list:   <a class="reference external" href="http://groups.google.com/group/disciple-cafe">http://groups.google.com/group/disciple-cafe</a></li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../section/04-Release.html">Release Notes</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="ddc-0.4.2.html">The Disciplined Disciple Compiler 0.4.2 (2016/04/30)</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Disciple Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>

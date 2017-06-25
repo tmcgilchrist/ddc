@@ -1,0 +1,217 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>The Disciplined Disciple Compiler 0.3.1 (2012/12/22) &#8212; Disciple 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="The Disciplined Disciple Compiler 0.3.2 (2013/07/26)" href="ddc-0.3.2.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../index.html">
+          <span>Disciple 0.4.3 documentation</span></a></h1>
+        <h2 class="heading"><span>The Disciplined Disciple Compiler 0.3.1 (2012/12/22)</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="ddc-0.3.2.html">The Disciplined Disciple Compiler 0.3.2 (2013/07/26)</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="the-disciplined-disciple-compiler-0-3-1-2012-12-22">
+<h1>The Disciplined Disciple Compiler 0.3.1 (2012/12/22)<a class="headerlink" href="#the-disciplined-disciple-compiler-0-3-1-2012-12-22" title="Permalink to this headline">¶</a></h1>
+<p>DDC is a research compiler used to investigate program transformation in the
+presence of computational effects. This is a development release. There is
+enough implemented to experiment with the language, but not enough to solve
+actual problems...        (unless you&#8217;re looking for a compiler to hack on).</p>
+<p>DDC compiles several related languages:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">Disciple Core Lite (Module.dcl)</p>
+<p>Explicitly typed System-F2 style core language with region, effect and
+closure typing. Evaluation is left-to-right call-by-value by default,
+but explicit lazy evaluation is also supported. There is also a capability
+system to track whether objects are mutable or constant, and to ensure that
+computations that perform visible side effects are not suspended with lazy
+evaluation. The Lite language supports higher order functions, algebraic
+data types and unboxed primitive types.
+(not all features are supported by the code generators yet, see below)</p>
+</li>
+<li><p class="first">Disciple Core Salt (Module.dce)</p>
+<p>A cut-down version of Disciple Core Lite that can be easily mapped onto
+C or LLVM code. The Salt language is first-order and does not support
+partial application. DDC transforms Lite code to Salt code and uses Salt as
+an intermediate representation. You can also write programs in it directly.</p>
+</li>
+<li><p class="first">Disciple Core Eval (Module.dcv)</p>
+<p>Similar to Disciple Core Lite, except without unboxed primitive types.
+This language is accepted by the interpreter.</p>
+</li>
+</ul>
+</div></blockquote>
+<p>All three languages share the same abstract syntax tree (AST), type checker,
+and are amenable to the same program transformations. They differ only in the
+set of allowable language features, and which primitive types and operators
+are included.</p>
+<div class="section" id="what-works-in-this-release">
+<h2>What Works in this Release:<a class="headerlink" href="#what-works-in-this-release" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Parsing and type checking for the Lite, Salt and Eval languages.</li>
+<li>Compilation via C and LLVM for first-order Lite and Salt programs.</li>
+<li>Interpreter for the full Eval language.</li>
+<li>Cross module inlining.</li>
+<li>Rewrite rules.</li>
+<li>Generation of LLVM aliasing and constancy meta-data.</li>
+<li><dl class="first docutils">
+<dt>Several standard program transformations:</dt>
+<dd>Anonymize (remove names), Beta (substitute), Bubble (move type-casts),
+Elaborate (add witnesses), Flatten (eliminate nested bindings),
+Forward (let-floating), Namify (add names), Prune (dead-code elimination),
+Snip (eliminate nested applications).</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="what-doesn-t">
+<h2>What Doesn&#8217;t<a class="headerlink" href="#what-doesn-t" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul>
+<li><p class="first">No source locations in error messages.</p>
+<p>The messages themselves are ok, but you don&#8217;t get a line-number.</p>
+</li>
+<li><p class="first">No storage management.</p>
+<p>There is a fixed 64k heap and when you&#8217;ve allocated that much space the
+runtime just calls abort().</p>
+</li>
+<li><p class="first">No type inference.</p>
+<p>You have to write all your own type applications, including effect and
+closure annotations, which isn&#8217;t much fun.</p>
+</li>
+<li><p class="first">No multi-module compilation driver.</p>
+<p>DDC isn&#8217;t restricted to whole-program compilation, but the &#8211;make driver
+doesn&#8217;t handle multiple modules. You&#8217;d need to do the linking yourself.</p>
+</li>
+<li><p class="first">No user defined data types.</p>
+<p>Pairs and Lists are baked in, but we don&#8217;t handle data type declarations.</p>
+</li>
+<li><p class="first">No code generation for lazy evaluation.
+The language semantics and interpreter support it, but the C and LLVM
+code generators do not.</p>
+</li>
+<li><p class="first">No code generation for partial application.</p>
+<p>likewise.</p>
+</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="previous-releases">
+<h2>Previous Releases<a class="headerlink" href="#previous-releases" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.</li>
+<li>2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.</li>
+<li>2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="immediate-plans">
+<h2>Immediate Plans<a class="headerlink" href="#immediate-plans" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Finish the Coq proof for the core language. We have a hand-done proof for
+an earlier version of the language, and a Coq formalization for a
+System-F2 language with a mutable heap. We need to add regions, effects
+and the capability system to the Coq formalization.</li>
+<li>Implement a local type inferencer. The type inferencer will fill in type
+applications as well as effect and closure annotations, but will not
+perform let-generalisation. This is similar the local type inference used
+to support implicits in Coq/Gallina.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="how-you-can-help">
+<h2>How you can help<a class="headerlink" href="#how-you-can-help" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Work through the tutorial on the web-site and send any comments to the
+mailing list. <a class="reference external" href="http://disciple.ouroborus.net/wiki/Tutorial/Core">http://disciple.ouroborus.net/wiki/Tutorial/Core</a></li>
+<li>Send bug-reports to the mailing list, or get an account on the trac.</li>
+<li>Fix bugs on the trac.</li>
+<li>Say hello on the mailing list and we can help you get started on any of
+the main missing features. These are all interesting projects.</li>
+<li>Tell your friends.</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="people">
+<h2>People:<a class="headerlink" href="#people" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>The following people contributed to DDC since the last release:</p>
+<ul class="simple">
+<li>Tran Ma                - LLVM aliasing and constancy meta-data.</li>
+<li>Amos Robinson          - Rewrite rule system and program transforms.</li>
+<li>Erik de Castro Lopo    - Build framework.</li>
+<li>Ben Lippmeier          - Code generators, framework, program transforms.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="more-information">
+<h2>More Information:<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>See the web-site:        <a class="reference external" href="http://disciple.ouroborus.net">http://disciple.ouroborus.net</a></li>
+<li>Getting Started Guide:   <a class="reference external" href="http://disciple.ouroborus.net/wiki/Tutorial/Core">http://disciple.ouroborus.net/wiki/Tutorial/Core</a></li>
+<li>Read the mailing list:   <a class="reference external" href="http://groups.google.com/group/disciple-cafe">http://groups.google.com/group/disciple-cafe</a></li>
+</ul>
+</div></blockquote>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="ddc-0.3.2.html">The Disciplined Disciple Compiler 0.3.2 (2013/07/26)</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../index.html">Contents</a>
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Disciple Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>
