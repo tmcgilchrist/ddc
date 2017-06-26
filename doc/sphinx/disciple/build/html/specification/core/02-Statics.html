@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Static Semantics &#8212; Disciple 0.4.3 documentation</title>
+    <title>Static Semantics &#8212; Disciple 0.5.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.4.3',
+        VERSION:     '0.5.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true,
@@ -27,12 +27,12 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Release Notes" href="../../section/04-Release.html" />
+    <link rel="next" title="Development" href="../../section/03-Development.html" />
     <link rel="prev" title="Abstract Syntax" href="01-Abstract.html" /> 
   </head>
   <body role="document">
       <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
-          <span>Disciple 0.4.3 documentation</span></a></h1>
+          <span>Disciple 0.5.1 documentation</span></a></h1>
         <h2 class="heading"><span>Static Semantics</span></h2>
       </div>
       <div class="topnav" role="navigation" aria-label="top navigation">
@@ -42,7 +42,7 @@
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../../section/04-Release.html">Release Notes</a>&#160;&#160;»
+        <a href="../../section/03-Development.html">Development</a>&#160;&#160;»
         </p>
 
       </div>
@@ -154,7 +154,7 @@ Void   :: Data
 </div>
 <p>A boxed term has the type of a suspension, where the effect <cite>σ</cite> and return type <cite>t</cite> of the suspension are the corresponding effect and types of the term being boxed. A boxed term is pure.</p>
 <div class="highlight-none"><div class="highlight"><pre><span></span>          Δ | Γ ⊢ x1 :: S σ1 t1 ! σ2    Γ supports σ1
-(TyRun) ----------------------------------------------
+(TyRun) ──────────────────────────────────────────────
               Δ | Γ ⊢ run e1 :: t1  ! σ1 + σ2
 </pre></div>
 </div>
@@ -171,7 +171,7 @@ Void   :: Data
         &#160;&#160;::&#160;&#160;
         <a class="uplink" href="../../index.html">Contents</a>
         &#160;&#160;::&#160;&#160;
-        <a href="../../section/04-Release.html">Release Notes</a>&#160;&#160;»
+        <a href="../../section/03-Development.html">Development</a>&#160;&#160;»
         </p>
 
       </div>

@@ -1,0 +1,226 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Concrete Syntax &#8212; Disciple 0.5.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/haiku.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.5.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Core Language" href="../02-Core.html" />
+    <link rel="prev" title="Source Language" href="../01-Source.html" /> 
+  </head>
+  <body role="document">
+      <div class="header" role="banner"><h1 class="heading"><a href="../../index.html">
+          <span>Disciple 0.5.1 documentation</span></a></h1>
+        <h2 class="heading"><span>Concrete Syntax</span></h2>
+      </div>
+      <div class="topnav" role="navigation" aria-label="top navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../01-Source.html">Source Language</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../02-Core.html">Core Language</a>&#160;&#160;»
+        </p>
+
+      </div>
+      <div class="content">
+        
+        
+  <div class="section" id="concrete-syntax">
+<h1>Concrete Syntax<a class="headerlink" href="#concrete-syntax" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="modules">
+<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Module
+ ::= &#39;module&#39; ModuleName
+      ExportSpecs* ImportSpecs*;
+     &#39;where&#39;  &#39;{&#39; Decl*; &#39;}&#39;
+
+ExportSpecs
+ ::= &#39;export&#39; &#39;{&#39; Var+; &#39;}&#39;
+
+ImportSpecs
+ ::= &#39;import&#39; &#39;{&#39; ModuleName;+ &#39;}&#39;
+  |  &#39;import&#39; &#39;foreign&#39; ImportSpecsForeign
+
+ImportSpecsForeign
+ ::= &#39;boxed&#39;    &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;
+  |  &#39;abstract&#39; &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;
+  |  &#39;abstract&#39; &#39;capability&#39; &#39;{&#39; VarSig;+ &#39;}&#39;
+  |  &#39;c&#39;        &#39;value&#39;      &#39;{&#39; VarSig;+ &#39;}&#39;
+
+VarSig  ::= &#39;Var&#39; &#39;:&#39; Type
+ConSig  ::= &#39;Con&#39; &#39;:&#39; Type
+</pre></div>
+</div>
+<p>Source modules begin with the keyword <code class="docutils literal"><span class="pre">module</span></code> followed by a module name, then some
+optional export and import specifications, then some declarations. The export specifications must come before
+the import specifications.</p>
+<p>Export specifications list names of term bindings to export.</p>
+<p>Import specifications list modules or foreign things to import.</p>
+<p>Foreign types, capabilities and values can be imported. Foreign boxed types classify values that are stored in the Disciple runtime heap and have the standard format expected by the runtime system. Foreign abstract types are used to classify values that are not stored in the Disciple runtime heap. Foreign abstract capabilities such as &#8216;Console&#8217; and &#8216;File&#8217; are used for effects that alter the foreign world. Foreign c values are functions accessible via the standard C calling convention.</p>
+<p>Braces in the <code class="docutils literal"><span class="pre">Module</span></code>, <code class="docutils literal"><span class="pre">ExportSpecs</span></code>, <code class="docutils literal"><span class="pre">ImportSpecs</span></code> and <code class="docutils literal"><span class="pre">ImportSpecsForeign</span></code> productions will be inserted using the off-side rule.</p>
+</div>
+<div class="section" id="declarations">
+<h2>Declarations<a class="headerlink" href="#declarations" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Decl                                                     (declaration)
+ ::= DeclType | DeclData | DeclValue                     (type declaration)
+
+DeclType                                                 (type declaration)
+ ::= &#39;type&#39; Con &#39;=&#39; Type                                 (type synonym declaration)
+
+DeclData                                                 (data type declaration)
+ ::= &#39;data&#39; Con TypeParams*
+        (&#39;where&#39; &#39;{&#39; (Con &#39;:&#39; Type)+; &#39;}&#39;)?              (data type declaration)
+
+TypeParams                                               (type parameter)
+ ::= &#39;(&#39; Var+ &#39;:&#39; Type &#39;)&#39;                               (type parameters with shared kind)
+  |  Var                                                 (single type parameter)
+
+DeclTerm                                                 (term declaration)
+ ::= Var &#39;:&#39; Type                                        (type signature)
+  |  Var DeclTermParams* (&#39;:&#39; Type)? GuardedExpsMaybe    (term declaration using guards)
+
+DeclTermParams                                           (term declaration parameters)
+ ::= &#39;[&#39; Var+       &#39;:&#39; Type &#39;]&#39;                         (type parameter)
+  |  &#39;{&#39; Type &#39;}&#39;                                        (anonymous implicit parameter)
+  |  &#39;{&#39; PatSimple+ &#39;:&#39; Type &#39;}&#39;                         (implicit term parameters)
+  |  &#39;(&#39; PatSimple+ &#39;:&#39; Type &#39;}&#39;                         (patterns with shared type annotation)
+  |  &#39;(&#39; Pat &#39;)&#39;                                         (pattern in parenthesis)
+  |  PatBase                                             (base pattern)
+
+GuardedExpsMaybe                                         (maybe guarded expressions)
+ ::= &#39;=&#39; Exp                                             (simple unguarded expression)
+  |  GuardedExp*                                         (multiple guarded expressions)
+
+GuardedExp
+ ::= &#39;|&#39; Guard,+ &#39;=&#39; Exp                                 (guarded expression)
+
+Guard
+ ::= &#39;otherwise&#39;                                         (otherwise guard always matches)
+  |  Pat &#39;&lt;-&#39; Exp                                        (match against pattern)
+  |  Exp                                                 (boolean predicate)
+</pre></div>
+</div>
+<p>Type declarations define unparameterised type synonyms. (<a class="reference external" href="http://trac.ouroborus.net/ddc/ticket/385">Issue385</a>) covers addition of type parameters.</p>
+<p>Data type declarations define parameterised data types, giving the types of their data constructors. The return type of each constructor must match the data type being defined. It is valid to define a data type with no data constructors.</p>
+<p>Term declarations are either type signatures or declarations that can mention function parameters, have an optional result type, and are defined in terms of guarded expressions.</p>
+<p>Type parameters give the name of each parameter with an optional kind annotation. Multiple parameters can be defined that share a common kind annotation.</p>
+<p>Term declaration parameters can be either type parameters with a shared kind, an anonymous or named implicit parameter, or a term parameter defined via pattern matching.</p>
+<p>Braces in the <code class="docutils literal"><span class="pre">DeclData</span></code> production will be inserted using the off-side rule.</p>
+</div>
+<div class="section" id="term-expressions">
+<h2>Term Expressions<a class="headerlink" href="#term-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Exp
+ ::= ExpApp (&#39;where&#39; &#39;{&#39; Clause;+ &#39;}&#39;)?                  (expression with optional where clause)
+
+ExpApp
+ ::= ExpAppPrefix                                        (prefix application)
+  |  ExpAppInfix                                         (infix application)
+
+ExpAppPrefix
+ ::= ExpFront ExpArg*;                                   (front expression applied to arguments)
+
+ExpFront
+ ::= &#39;λ&#39; TermParams &#39;-&gt;&#39; Exp                             (term abstraction, using &#39;\&#39;  for &#39;λ&#39; is ok)
+  |  &#39;Λ&#39; TypeParams &#39;-&gt;&#39; Exp                             (type abstraction, using &#39;/\&#39; for &#39;Λ&#39; is ok)
+  |  &#39;let&#39;    DeclTerm   &#39;in&#39; Exp                        (non-recursive let binding)
+  |  &#39;letrec&#39; DeclTerm+; &#39;in&#39; Exp                        (recursive let bindings)
+  |  &#39;do&#39;    &#39;{&#39; Stmt+; &#39;}&#39;                              (do expression)
+  |  &#39;case&#39;  &#39;{&#39; AltCase+; &#39;}&#39;                           (case expression)
+  |  &#39;match&#39; &#39;{&#39; GuardedExp+; &#39;}&#39;                        (match expression)
+  |  &#39;if&#39; Exp &#39;then&#39; Exp &#39;else&#39; Exp                      (if-expression)
+  |  &#39;weakeff&#39; &#39;[&#39; Type &#39;]&#39; &#39;in&#39; Exp                     (weaken effect of an expression)
+  |  &#39;private&#39; Bind+ WithCaps? &#39;in&#39; Exp                  (private region introduction)
+  |  &#39;extend&#39;  Bind &#39;using&#39; Bind+ WithCaps? &#39;in&#39; Exp     (region extension)
+  |  &#39;box&#39; Exp                                           (box a computation)
+  |  &#39;run&#39; Exp                                           (run a boxed computation)
+  |  ExpBase                                             (base expression)
+
+ExpArg
+ ::= &#39;{&#39; Exp  &#39;}&#39;                                        (implicit term argument)
+  |  &#39;[&#39; Type &#39;]&#39;                                        (type argument)
+  |  ExpBase                                             (base expression)
+
+ExpBase
+ ::= &#39;()&#39;                                                (unit  data constructor)
+  |  DaCon                                               (named data constructor)
+  |  Literal                                             (literal value)
+  |  Builtin                                             (fragment specific builtin value)
+  |  Var                                                 (named variable)
+  |  &#39;(&#39; InfixOp &#39;)&#39;                                     (reference to infix operator)
+  |  &#39;(&#39; Exp &#39;,&#39; Exp+, &#39;)&#39;                               (tuple expression)
+  |  &#39;(&#39; Exp &#39;)&#39;                                         (parenthesised expression)
+
+TermParams
+ ::= &#39;(&#39; Pat+ &#39;:&#39; Type &#39;)&#39;                               (explicit parameter)
+  |  &#39;{&#39; Pat+ &#39;:&#39; Type &#39;}&#39;                               (implicit parameter)
+  |  PatBase+                                            (base pattern)
+
+
+WithCaps
+ ::= &#39;with&#39; &#39;{&#39; BindT+ &#39;}&#39;
+</pre></div>
+</div>
+</div>
+<div class="section" id="patterns-and-alternatives">
+<h2>Patterns and Alternatives<a class="headerlink" href="#patterns-and-alternatives" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Pat          ::= DaCon PatBase*                       (data constructor patterm)
+              |  PatBase                              (base pattern)
+
+PatBase      ::= &#39;()&#39;                                 (unit data constructor pattern)
+              |  DaCon                                (named data constructor pattern)
+              |  Literal                              (literal pattern)
+              |  Var                                  (variable pattern)
+              |  &#39;_&#39;                                  (wildcard pattern)
+              |  &#39;(&#39; Pat &#39;,&#39; Pat+ &#39;)&#39;                 (tuple pattern)
+              |  &#39;(&#39; Pat &#39;)&#39;                          (parenthesised pattern)
+
+AltCase      ::= Pat GuardedExp* &#39;-&gt;&#39; Exp             (case alternative)
+</pre></div>
+</div>
+</div>
+</div>
+
+
+      </div>
+      <div class="bottomnav" role="navigation" aria-label="bottom navigation">
+      
+        <p>
+        «&#160;&#160;<a href="../01-Source.html">Source Language</a>
+        &#160;&#160;::&#160;&#160;
+        <a class="uplink" href="../../index.html">Contents</a>
+        &#160;&#160;::&#160;&#160;
+        <a href="../02-Core.html">Core Language</a>&#160;&#160;»
+        </p>
+
+      </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Disciple Development Team.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.5.6.
+    </div>
+  </body>
+</html>
