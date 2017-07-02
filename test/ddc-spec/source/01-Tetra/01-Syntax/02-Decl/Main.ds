@@ -1,0 +1,214 @@
+
+-- Demonstrate the various top-level declaration forms.
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+-- Data type declaration where the constructors have arguments.
+--   We define two simple shapes.
+--   Rectangles have a height and width, while circles have a radius.
+data Shape where
+        Rectangle  : Nat -> Nat -> Shape
+        Circle     : Nat -> Shape
+
+
+-------------------------------------------------------------------------------
+-- Type synonym declarations
+--   We can define simple type synonyms.
+--   Support for parameterised synonyms is not yet complete.
+--
+type Scalar     = Nat
+type Vector     = (Scalar, Scalar)
+type Dot        = Vector -> Vector -> Scalar
+
+applyDot (f: Dot) (v1: Vector) (v2: Vector): Scalar
+ = f v1 v2
+
+
+-------------------------------------------------------------------------------
+-- Data type declarations.
+--   For a simple enumeration we define the constructors to all have
+--   the same type.
+data Color where
+        Red     : Color
+        Green   : Color
+        Blue    : Color
+
+
+-- Parameterised data type declaration.
+--   We define a binary tree with values at the leaves.
+--   The result type of each constructor must match the data type being
+--   defined -- in this case it is 'Tree k v'.
+data Tree (k: Data) (v: Data) where
+        Leaf    : v -> Tree k v
+        Node    : k -> Tree k v -> Tree k v -> Tree k v
+
+
+-- We can also use a syntax where the two type parameters share a common kind.
+data Tree2 (k v: Data) where
+        Leaf2   : v -> Tree2 k v
+        Node2   : k -> Tree2 k v -> Tree2 k v -> Tree2 k v
+
+
+-- Data types with no constructors.
+--   These are typically used as phantom types.
+data Unlikely
+
+
+-------------------------------------------------------------------------------
+-- Term declarations
+
+-- Forms of type signatures ---------------------
+-- Signatures can be specified separately from the term bindings,
+--   which is common syntax in Haskell-like languages.
+twiceNat: (Nat -> Nat) -> Nat -> Nat
+twiceNat f x = f (f x)
+
+
+-- The above syntax is equivalent to the form where the parameter and result
+-- types annotate the term declaration.
+twiceNat2 (f: Nat -> Nat) (x: Nat): Nat
+ = f (f x)
+
+
+-- If the result type is omitted it will be inferred.
+--   This style is common in the Scala language.
+twiceNat3 (f: Nat -> Nat) (x: Nat)
+ = f (f x)
+
+
+-- With currying we can also shift some parameter types to the result.
+twiceNat4 (f: Nat -> Nat): Nat -> Nat
+ = λ(x: Nat) -> f (f x)
+
+
+-- .. or attach the complete signature to the binder.
+twiceNat5: (Nat -> Nat) -> Nat -> Nat
+ = λ(f: Nat -> Nat) (x: Nat) -> f (f x)
+
+
+-- Multiple parameters can be specified which share the same type.
+add3 (x y z: Nat): Nat
+ = x + y + z
+
+
+-- Parameters can also be bound within patterns.
+dot: (Nat, Nat) -> (Nat, Nat) -> Nat
+dot (x1, y1) (x2, y2)
+ = x1 * x2 + y1 * y2
+
+
+-- .. and nested patterns.
+dot2: ((Nat, Nat), (Nat, Nat)) -> Nat
+dot2 ((x1, y1), (x2, y2))
+ = x1 * x2 + y1 * y2
+
+
+-- Declarations using pattern matching with multiple clauses.
+doubleTrue: Bool -> Nat -> Nat
+doubleTrue True  x = 2 * x
+doubleTrue False x = x
+
+
+-- Implicit binders -----------------------------
+-- Using {} parens we bind an implicit parameter.
+--  When this function is applied at the call-site,
+--  the inner-most bound 'Shape' will be passed as the first argument.
+appShape {sx: Shape} (f: Shape -> Shape): Shape
+ = f sx
+
+-- For an example of 'appShape' we first define a utility function.
+scaleShape (n: Nat) (ss: Shape): Shape
+ = case ss of
+        Circle r        -> Circle    (r * n)
+        Rectangle h w   -> Rectangle (h * n) (w * n)
+
+-- Here is a shape defined at top level that we want to pass implicitly.
+topShape: Shape
+ = Circle 1
+
+-- Now when we apply 'appShape' the 'topShape'
+-- value is implicitly passed as the first argument.
+testShape (scale: Nat): Shape
+ = appShape (scaleShape scale)
+
+-- If we don't need to name the implicit argument in the body of the function
+-- then we can omit the binder name. Here the same shape that is implicitly
+-- passed to 'twoShapes' is also implicitly passed to 'appShape'.
+twoShapes {Shape} (n: Nat): (Shape, Shape)
+ = let  s = appShape (scaleShape n)
+   in   (s, s)
+
+-- The above 'twoShapes' function can be desugared to the following.
+-- Here the signature reveals the 'Shape' argument is passed implicitly,
+-- bug we've given the implicitly passed argument an explicit name and then
+-- passed it through to 'appShape'.
+twoShapes2: {Shape} -> Nat -> (Shape, Shape)
+twoShapes2
+ =  λ{is: Shape}
+ -> λ(n: Nat)
+ -> let s = appShape {is} (scaleShape n)
+    in  (s, s)
+
+
+-- Type binders ---------------------------------
+-- Type parameters are specified using by wrapping the binders in {@ .. },
+-- where the braces {} imply that the argument will be inserted at the call
+-- site implicitly, and the '@' refers to the type namespace.
+twice {@a: Data} (f: a -> a) (x: a): a
+ = f (f x)
+
+
+-- .. which is equivalent to:
+twice2 {@a: Data}: (a -> a) -> a -> a
+ = λ(f: a -> a) -> λ(x: a) -> f (f x)
+
+
+-- .. which is equivalent to:
+twice3 : {@a: Data} -> (a -> a) -> a -> a
+twice3 f x = f (f x)
+
+
+-- Multiple parameters can be specified which share the same kind.
+compose {@a b c: Data} (f: a -> b) (g: b -> c) (x: a): c
+ = g (f x)
+
+
+-- Type parameters can be provided explicitly using a matching {@ .. }
+-- at the use site.
+twiceNat6 (f: Nat -> Nat) (x: Nat): Nat
+ = twice {@Nat} f x
+
+
+-- .. with multiple type arguments.
+composeNat (f: Nat -> Nat) (g: Nat -> Nat) (x: Nat): Nat
+ = compose {@Nat} {@Nat} {@Nat} f g x
+
+
+-- Putting it together.
+treeSize: {@k v: Data} -> Tree k v -> Nat
+treeSize (Leaf _)       = 1
+treeSize (Node _ l r)   = 1 + treeSize l + treeSize r
+
+
+-- The above function can be desugared to the following.
+treeSize2: {@k v: Data} -> Tree k v -> Nat
+treeSize2
+ =  λ{@k v: Data}
+ -> λ(tree: Tree k v)
+ -> case tree of
+        Leaf _          -> 1
+        Node _ l r      -> 1 + treeSize l + treeSize r
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above example functions.
+main ()
+ = do   writel $ show $ applyDot dot (1, 2) (3, 4)
+        writel $ show $ twiceNat (\z -> z * 2) 5
+        writel $ show $ add3 1 2 3
+        writel $ show $ doubleTrue True 5
+        writel $ show $ twice (\z -> z * 2) 5
+        writel $ show $ treeSize (Node 1 (Leaf "foo") (Leaf "bar"))
+

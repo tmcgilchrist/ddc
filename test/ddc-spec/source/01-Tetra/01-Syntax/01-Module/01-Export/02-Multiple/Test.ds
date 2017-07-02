@@ -1,0 +1,11 @@
+
+-- Demonstrate multiple module export clauses in module header.
+module Test
+export foo
+export bar
+export baz
+where
+
+foo = 2
+bar = 3
+baz = 4

@@ -63,7 +63,7 @@ pTypeUnion
 pTypeForall :: Parser Type
 pTypeForall
  = P.choice
- [ -- Universal quantification.
+ [ -- Implicit universal quantification (old syntax)
    -- [v1 v1 ... vn : T1]. T2
    do   pSym SSquareBra
         bs      <- P.many1 pBind
@@ -77,6 +77,34 @@ pTypeForall
                               $  TApp (TCon (TyConForall kBind))
                                       (TAbs b kBind t))
                         tBody bs
+
+ , do
+        pSym SBraceBra
+        P.choice
+         [ do   -- Implicit universal quantification.
+                -- {@v1 v2 .. vn : T1} -> T2
+
+                pSym SAt
+                bs      <- P.many1 pBind
+                sp      <- pTokSP (KOp ":")
+                kBind   <- pTypeUnion
+                pSym SBraceKet
+                pSym SArrowDashRight
+
+                tBody   <- pTypeForall
+                return  $ foldr (\b t -> TAnnot sp
+                                      $  TApp (TCon (TyConForall kBind))
+                                              (TAbs b kBind t))
+                                tBody bs
+
+         , do   -- Implicit term parameter
+                -- {T1} -> T2
+                tParam  <- pTypeForall
+                pSym SBraceKet
+                sp      <- pSym SArrowDashRight
+                tResult <- pTypeForall
+                return  $  TAnnot sp $ TFunImplicit tParam tResult
+         ]
 
    -- Body type
  , do   pTypeFun

@@ -96,6 +96,15 @@ pExpArgsSpecSP pX
         pSym    SSquareKet
         return  (sp, [RType t])
 
+        -- New syntax for type applications.
+        -- @TypeAtom
+ , P.try $ do
+        pSym SBraceBra
+        sp      <- pSym SAt
+        t       <- pType
+        pSym SBraceKet
+        return  (sp, [RType t])
+
         -- [: Type0 Type0 ... :]
  , do   sp      <- pSym SSquareColonBra
         ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
@@ -138,10 +147,14 @@ pExpFrontSP
         pts     <- fmap concat $ P.many1 pTermParams
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp
-                        $ foldr (\(ps, p, mt) -> XAbsPat sp ps p mt)
-                                xBody pts)
 
+        let makeAbs (ps, Right p, mt) x = XAbsPat sp ps p mt x
+            makeAbs (_,  Left  b, mt) x = XAbs (MType b mt)  x
+
+        return  (sp, XAnnot sp $ foldr makeAbs xBody pts)
+
+
+{-
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
  , do   sp      <- P.choice
@@ -153,7 +166,7 @@ pExpFrontSP
         return  (sp, XAnnot sp
                         $ foldr (\(b, mt) x -> XAbs (MType b mt) x)
                                 xBody bmts)
-
+-}
         -- let expression
  , do   (lts, sp) <- pLetsSP
         pTok    (KKeyword EIn)
@@ -403,7 +416,7 @@ pLetsSP
     [ -- non-recursive let
       do sp       <- pKey ELet
          l        <- liftM snd $ pDeclTermSP
-         return (LGroup [l], sp)
+         return (LGroup False [l], sp)
 
       -- recursive let
     , do sp       <- pKey ELetRec
@@ -411,7 +424,7 @@ pLetsSP
          ls       <- liftM (map snd)
                   $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
          pSym SBraceKet
-         return (LGroup ls, sp)
+         return (LGroup True ls, sp)
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
@@ -647,7 +660,7 @@ makeStmts clsAcc ss
                 []      -> xBody
                 [SLet sp bmt [] [GExp x]]
                         -> XAnnot sp $ XLet (LLet bmt x) xBody
-                _       -> XLet (LGroup clsAcc) xBody
+                _       -> XLet (LGroup False clsAcc) xBody
    in
       case ss of
         [StmtNone _ x]
