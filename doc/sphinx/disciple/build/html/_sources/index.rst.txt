@@ -1,8 +1,17 @@
 
-Disciple 0.5.1
-==============
+Disciple
+========
 
-Disciple is an experimental dialect of Haskell used to investigate static typing and program transformation in the presence of computational effects. Version 0.5.1 is "working alpha" quality, meaning there is a complete system that can be hacked around with, but it's not yet industrial strength.
+The Disciple language is an experimental dialect of Haskell which investigates static typing and program transformation in the presence of computational effects. Version 0.5.1 is "working alpha" quality, meaning there is a complete system that can be hacked around with, but it's not yet industrial strength.
+
+The main language features are:
+
+* Haskell-like source language, so Haskell-like programs should work with minor modifications.
+* Modal region and effect system using 'box' and 'run' to suspend and force computations.
+* Higher rank polymorphism with bidirectional type inference.
+* Simple two space copying garbage collection.
+* Default call-by-value evaluation.
+* Typed external core language.
 
 For example programs, see the demo_ directory on github, which includes:
 
@@ -16,16 +25,6 @@ For example programs, see the demo_ directory on github, which includes:
 .. _`Lambda`:           https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra/90-Language/01-Lambda
 
 
-The main language features are:
-
-* Haskell-like source language, so Haskell-like programs should work with minor modifications.
-* Modal region and effect system using 'box' and 'run' to suspend and force computations.
-* Higher rank polymorphism with bidirectional type inference.
-* Simple two space copying garbage collection.
-* Default call-by-value evaluation.
-* Typed external core language.
-
-
 
 .. toctree::
    :maxdepth: 1
@@ -33,8 +32,9 @@ The main language features are:
 
    section/01-GettingStarted.rst
    section/02-Specification.rst
-   section/03-Development.rst
-   section/04-Release.rst
+   section/03-Architecture.rst
+   section/04-Development.rst
+   section/05-Release.rst
 
 
 Indices and tables

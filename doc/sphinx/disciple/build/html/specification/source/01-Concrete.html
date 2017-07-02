@@ -53,26 +53,26 @@
 <h1>Concrete Syntax<a class="headerlink" href="#concrete-syntax" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="modules">
 <h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Module
+<div class="highlight-none"><div class="highlight"><pre><span></span>Module                                                   (source modules)
  ::= &#39;module&#39; ModuleName
       ExportSpecs* ImportSpecs*;
      &#39;where&#39;  &#39;{&#39; Decl*; &#39;}&#39;
 
-ExportSpecs
+ExportSpecs                                              (export specifications)
  ::= &#39;export&#39; &#39;{&#39; Var+; &#39;}&#39;
 
-ImportSpecs
- ::= &#39;import&#39; &#39;{&#39; ModuleName;+ &#39;}&#39;
-  |  &#39;import&#39; &#39;foreign&#39; ImportSpecsForeign
+ImportSpecs                                              (import specifications)
+ ::= &#39;import&#39; &#39;{&#39; ModuleName;+ &#39;}&#39;                       (module imports)
+  |  &#39;import&#39; &#39;foreign&#39; ImportSpecsForeign               (foreign imports)
 
-ImportSpecsForeign
- ::= &#39;boxed&#39;    &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;
-  |  &#39;abstract&#39; &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;
-  |  &#39;abstract&#39; &#39;capability&#39; &#39;{&#39; VarSig;+ &#39;}&#39;
-  |  &#39;c&#39;        &#39;value&#39;      &#39;{&#39; VarSig;+ &#39;}&#39;
+ImportSpecsForeign                                       (foreign import specification)
+ ::= &#39;boxed&#39;    &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;            (foreign boxed type import)
+  |  &#39;abstract&#39; &#39;type&#39;       &#39;{&#39; ConSig;+ &#39;}&#39;            (foreign abstract type import)
+  |  &#39;abstract&#39; &#39;capability&#39; &#39;{&#39; VarSig;+ &#39;}&#39;            (foreign abstract capability import)
+  |  &#39;c&#39;        &#39;value&#39;      &#39;{&#39; VarSig;+ &#39;}&#39;            (foreign c value import)
 
-VarSig  ::= &#39;Var&#39; &#39;:&#39; Type
-ConSig  ::= &#39;Con&#39; &#39;:&#39; Type
+VarSig  ::= &#39;Var&#39; &#39;:&#39; Type                               (variable type signature)
+ConSig  ::= &#39;Con&#39; &#39;:&#39; Type                               (constructor type signature)
 </pre></div>
 </div>
 <p>Source modules begin with the keyword <code class="docutils literal"><span class="pre">module</span></code> followed by a module name, then some
@@ -82,46 +82,59 @@ the import specifications.</p>
 <p>Import specifications list modules or foreign things to import.</p>
 <p>Foreign types, capabilities and values can be imported. Foreign boxed types classify values that are stored in the Disciple runtime heap and have the standard format expected by the runtime system. Foreign abstract types are used to classify values that are not stored in the Disciple runtime heap. Foreign abstract capabilities such as &#8216;Console&#8217; and &#8216;File&#8217; are used for effects that alter the foreign world. Foreign c values are functions accessible via the standard C calling convention.</p>
 <p>Braces in the <code class="docutils literal"><span class="pre">Module</span></code>, <code class="docutils literal"><span class="pre">ExportSpecs</span></code>, <code class="docutils literal"><span class="pre">ImportSpecs</span></code> and <code class="docutils literal"><span class="pre">ImportSpecsForeign</span></code> productions will be inserted using the off-side rule.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/01-Module">module specification tests</a> for examples.</p>
+</div>
+<div class="section" id="types">
+<h2>Types<a class="headerlink" href="#types" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Type
+ ::= TypeSimple → Type                                   (explicit function type, using &#39;-&gt;&#39; for &#39;→&#39; is ok)
+  |  &#39;{&#39; Type &#39;}&#39; → Type                                 (implicit function type)
+  |  &#39;{&#39; &#39;@&#39; Var &#39;:&#39; Type &#39;}&#39; → Type                     (implicit universal quantification)
+  |  TypeApp + Type                                      (type sum)
+  |  TypeApp                                             (type application)
+
+TypeApp                                                  (type application)
+ ::= TypeApp TypeSimple                                  (type function applied to an argument)
+  |  TypeSimple                                          (simple type)
+
+TypeSimple
+ ::= Var                                                 (type variable)
+  |  Con                                                 (type constructor)
+  |  TypeBuiltin                                         (builtin type)
+  |  &#39;(&#39; Type &#39;,&#39; Type+, &#39;)&#39;                             (tuple type)
+  |  &#39;(&#39; Type &#39;)&#39;                                        (parenthesised type)
+
+TypeBuiltin
+ ::= &#39;Pure&#39;                                              (builtin pure effect)
+  |  &#39;Read&#39;  | &#39;Write&#39; | &#39;Alloc&#39;                         (builtin effects)
+</pre></div>
+</div>
 </div>
 <div class="section" id="declarations">
 <h2>Declarations<a class="headerlink" href="#declarations" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Decl                                                     (declaration)
- ::= DeclType | DeclData | DeclValue                     (type declaration)
+ ::= DeclType | DeclData | DeclValue
 
 DeclType                                                 (type declaration)
  ::= &#39;type&#39; Con &#39;=&#39; Type                                 (type synonym declaration)
 
 DeclData                                                 (data type declaration)
- ::= &#39;data&#39; Con TypeParams*
-        (&#39;where&#39; &#39;{&#39; (Con &#39;:&#39; Type)+; &#39;}&#39;)?              (data type declaration)
+ ::= &#39;data&#39; Con DeclDataParams*
+        (&#39;where&#39; &#39;{&#39; (Con &#39;:&#39; Type)+; &#39;}&#39;)?
 
-TypeParams                                               (type parameter)
- ::= &#39;(&#39; Var+ &#39;:&#39; Type &#39;)&#39;                               (type parameters with shared kind)
-  |  Var                                                 (single type parameter)
+DeclDataParams                                           (data type parameters)
+ ::= &#39;(&#39; Var+ &#39;:&#39; Type &#39;)&#39;                               (data type parameters with shared kind)
 
 DeclTerm                                                 (term declaration)
  ::= Var &#39;:&#39; Type                                        (type signature)
   |  Var DeclTermParams* (&#39;:&#39; Type)? GuardedExpsMaybe    (term declaration using guards)
 
 DeclTermParams                                           (term declaration parameters)
- ::= &#39;[&#39; Var+       &#39;:&#39; Type &#39;]&#39;                         (type parameter)
-  |  &#39;{&#39; Type &#39;}&#39;                                        (anonymous implicit parameter)
-  |  &#39;{&#39; PatSimple+ &#39;:&#39; Type &#39;}&#39;                         (implicit term parameters)
+ ::= PatSimple                                           (simple pattern)
   |  &#39;(&#39; PatSimple+ &#39;:&#39; Type &#39;}&#39;                         (patterns with shared type annotation)
-  |  &#39;(&#39; Pat &#39;)&#39;                                         (pattern in parenthesis)
-  |  PatBase                                             (base pattern)
-
-GuardedExpsMaybe                                         (maybe guarded expressions)
- ::= &#39;=&#39; Exp                                             (simple unguarded expression)
-  |  GuardedExp*                                         (multiple guarded expressions)
-
-GuardedExp
- ::= &#39;|&#39; Guard,+ &#39;=&#39; Exp                                 (guarded expression)
-
-Guard
- ::= &#39;otherwise&#39;                                         (otherwise guard always matches)
-  |  Pat &#39;&lt;-&#39; Exp                                        (match against pattern)
-  |  Exp                                                 (boolean predicate)
+  |  &#39;{&#39; PatSimple+ &#39;:&#39; Type &#39;}&#39;                         (implicit parameters)
+  |  &#39;{&#39; Type &#39;}&#39;                                        (anonymous implicit parameter)
+  |  &#39;{&#39; &#39;@&#39; Var+   &#39;:&#39; Type &#39;}&#39;                         (implicit type parameter)
 </pre></div>
 </div>
 <p>Type declarations define unparameterised type synonyms. (<a class="reference external" href="http://trac.ouroborus.net/ddc/ticket/385">Issue385</a>) covers addition of type parameters.</p>
@@ -130,75 +143,124 @@ Guard
 <p>Type parameters give the name of each parameter with an optional kind annotation. Multiple parameters can be defined that share a common kind annotation.</p>
 <p>Term declaration parameters can be either type parameters with a shared kind, an anonymous or named implicit parameter, or a term parameter defined via pattern matching.</p>
 <p>Braces in the <code class="docutils literal"><span class="pre">DeclData</span></code> production will be inserted using the off-side rule.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/02-Decl/Main.ds">declaration specification tests</a> for examples.</p>
+</div>
+<div class="section" id="guarded-expressions">
+<h2>Guarded Expressions<a class="headerlink" href="#guarded-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>GuardedExpsMaybe                               (maybe guarded expressions)
+ ::= &#39;=&#39; Exp                                   (simple unguarded expression)
+  |  GuardedExp*                               (multiple guarded expressions)
+
+GuardedExp
+ ::= &#39;|&#39; Guard,+ &#39;=&#39; Exp                       (guarded expression)
+
+Guard
+ ::= &#39;otherwise&#39;                               (otherwise guard always matches)
+  |  Pat &#39;&lt;-&#39; Exp                              (match against pattern)
+  |  Exp                                       (boolean predicate)
+</pre></div>
+</div>
+<p>The bodies of term declarations can be defined either with a single expression or using multiple guarded expressions.</p>
+<p>The <code class="docutils literal"><span class="pre">otherwise</span></code> guard always succeeds. The <code class="docutils literal"><span class="pre">Pat</span> <span class="pre">'&lt;-'</span> <span class="pre">Exp</span></code> guard succeeds when the value produced by <code class="docutils literal"><span class="pre">Exp</span></code> can be matched against <code class="docutils literal"><span class="pre">Pat</span></code>. The boolean predicate guard suceeds when the resulting value is <code class="docutils literal"><span class="pre">True</span></code>.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Guards/Main.ds">guards specification tests</a> for examples.</p>
 </div>
 <div class="section" id="term-expressions">
 <h2>Term Expressions<a class="headerlink" href="#term-expressions" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-none"><div class="highlight"><pre><span></span>Exp
- ::= ExpApp (&#39;where&#39; &#39;{&#39; Clause;+ &#39;}&#39;)?                  (expression with optional where clause)
+ ::= ExpApp (&#39;where&#39; &#39;{&#39; Clause;+ &#39;}&#39;)?        (expression with optional where clause)
 
-ExpApp
- ::= ExpAppPrefix                                        (prefix application)
-  |  ExpAppInfix                                         (infix application)
+ExpApp                                         (applicative expressions)
+ ::= ExpAppPrefix |  ExpAppInfix
+  |  ExpAppAbs    |  ExpAppBind
+  |  ExpAppMatch  |  ExpAppEffect
 
-ExpAppPrefix
- ::= ExpFront ExpArg*;                                   (front expression applied to arguments)
+ExpAppPrefix                                   (prefix application)
+ ::= ExpSimple ExpArg*                         (base expression applied to arguments)
 
-ExpFront
- ::= &#39;λ&#39; TermParams &#39;-&gt;&#39; Exp                             (term abstraction, using &#39;\&#39;  for &#39;λ&#39; is ok)
-  |  &#39;Λ&#39; TypeParams &#39;-&gt;&#39; Exp                             (type abstraction, using &#39;/\&#39; for &#39;Λ&#39; is ok)
-  |  &#39;let&#39;    DeclTerm   &#39;in&#39; Exp                        (non-recursive let binding)
-  |  &#39;letrec&#39; DeclTerm+; &#39;in&#39; Exp                        (recursive let bindings)
-  |  &#39;do&#39;    &#39;{&#39; Stmt+; &#39;}&#39;                              (do expression)
-  |  &#39;case&#39;  &#39;{&#39; AltCase+; &#39;}&#39;                           (case expression)
-  |  &#39;match&#39; &#39;{&#39; GuardedExp+; &#39;}&#39;                        (match expression)
-  |  &#39;if&#39; Exp &#39;then&#39; Exp &#39;else&#39; Exp                      (if-expression)
-  |  &#39;weakeff&#39; &#39;[&#39; Type &#39;]&#39; &#39;in&#39; Exp                     (weaken effect of an expression)
-  |  &#39;private&#39; Bind+ WithCaps? &#39;in&#39; Exp                  (private region introduction)
-  |  &#39;extend&#39;  Bind &#39;using&#39; Bind+ WithCaps? &#39;in&#39; Exp     (region extension)
-  |  &#39;box&#39; Exp                                           (box a computation)
-  |  &#39;run&#39; Exp                                           (run a boxed computation)
-  |  ExpBase                                             (base expression)
+ExpAppInfix                                    (infix application)
+ ::= ExpApp InfixOp ExpApp                     (application of infix operator)
+  |  ExpSimple
 
-ExpArg
- ::= &#39;{&#39; Exp  &#39;}&#39;                                        (implicit term argument)
-  |  &#39;[&#39; Type &#39;]&#39;                                        (type argument)
-  |  ExpBase                                             (base expression)
+ExpArg                                         (function argument)
+ ::= &#39;{&#39;  Exp  &#39;}&#39;                             (implicit term argument)
+  |  &#39;{&#39; &#39;@&#39; Type &#39;}&#39;                          (implicit type argument)
+  |  ExpBase                                   (base expression)
 
-ExpBase
- ::= &#39;()&#39;                                                (unit  data constructor)
-  |  DaCon                                               (named data constructor)
-  |  Literal                                             (literal value)
-  |  Builtin                                             (fragment specific builtin value)
-  |  Var                                                 (named variable)
-  |  &#39;(&#39; InfixOp &#39;)&#39;                                     (reference to infix operator)
-  |  &#39;(&#39; Exp &#39;,&#39; Exp+, &#39;)&#39;                               (tuple expression)
-  |  &#39;(&#39; Exp &#39;)&#39;                                         (parenthesised expression)
-
-TermParams
- ::= &#39;(&#39; Pat+ &#39;:&#39; Type &#39;)&#39;                               (explicit parameter)
-  |  &#39;{&#39; Pat+ &#39;:&#39; Type &#39;}&#39;                               (implicit parameter)
-  |  PatBase+                                            (base pattern)
-
-
-WithCaps
- ::= &#39;with&#39; &#39;{&#39; BindT+ &#39;}&#39;
+ExpSimple
+ ::= &#39;()&#39;                                      (unit  data constructor)
+  |  DaCon                                     (named data constructor)
+  |  Literal                                   (literal value)
+  |  Builtin                                   (fragment specific builtin value)
+  |  Var                                       (named variable)
+  |  &#39;(&#39; InfixOp &#39;)&#39;                           (reference to infix operator)
+  |  &#39;(&#39; Exp &#39;,&#39; Exp+, &#39;)&#39;                     (tuple expression)
+  |  &#39;(&#39; Exp &#39;)&#39;                               (parenthesised expression)
 </pre></div>
 </div>
 </div>
-<div class="section" id="patterns-and-alternatives">
-<h2>Patterns and Alternatives<a class="headerlink" href="#patterns-and-alternatives" title="Permalink to this headline">¶</a></h2>
-<div class="highlight-none"><div class="highlight"><pre><span></span>Pat          ::= DaCon PatBase*                       (data constructor patterm)
-              |  PatBase                              (base pattern)
+<div class="section" id="abstraction-expressions">
+<h2>Abstraction Expressions<a class="headerlink" href="#abstraction-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppAbs
+ ::= &#39;λ&#39; ExpParam &#39;-&gt;&#39; Exp                     (abstraction, using &#39;\&#39;  for &#39;λ&#39; is ok)
 
-PatBase      ::= &#39;()&#39;                                 (unit data constructor pattern)
-              |  DaCon                                (named data constructor pattern)
-              |  Literal                              (literal pattern)
-              |  Var                                  (variable pattern)
-              |  &#39;_&#39;                                  (wildcard pattern)
-              |  &#39;(&#39; Pat &#39;,&#39; Pat+ &#39;)&#39;                 (tuple pattern)
-              |  &#39;(&#39; Pat &#39;)&#39;                          (parenthesised pattern)
+ExpAbsParam
+ ::=  PatSimple+                               (explicit unannotated term parameter}
+  |  &#39;(&#39; Pat+     &#39;:&#39; Type &#39;)&#39;                 (explicit annotated term parameter)
+  |  &#39;{&#39; Pat+     &#39;:&#39; Type &#39;}&#39;                 (implicit annotated term parameter)
+  |  &#39;{&#39; &#39;@&#39; Var+ &#39;:&#39; Type &#39;}&#39;                 (implicit annotated type parmaeter)
+</pre></div>
+</div>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/05-Abs/Main.ds">abstraction specification tests</a> for examples.</p>
+</div>
+<div class="section" id="binding-expressions">
+<h2>Binding Expressions<a class="headerlink" href="#binding-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppBind
+ ::= &#39;let&#39;    DeclTerm   &#39;in&#39; Exp              (non-recursive let binding)
+  |  &#39;letrec&#39; DeclTerm+; &#39;in&#39; Exp              (recursive let bindings)
+  |  &#39;do&#39;    &#39;{&#39; Stmt+; &#39;}&#39;                    (do expression)
+</pre></div>
+</div>
+</div>
+<div class="section" id="matching-expressions">
+<h2>Matching Expressions<a class="headerlink" href="#matching-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppMatch
+ ::= &#39;case&#39;  &#39;{&#39; AltCase+; &#39;}&#39;                 (case expression)
+  |  &#39;match&#39; &#39;{&#39; GuardedExp+; &#39;}&#39;              (match expression)
+  |  &#39;if&#39; Exp &#39;then&#39; Exp &#39;else&#39; Exp            (if-expression)
 
-AltCase      ::= Pat GuardedExp* &#39;-&gt;&#39; Exp             (case alternative)
+AltCase
+ ::= Pat GuardedExp* &#39;-&gt;&#39; Exp                  (case alternative)
+
+Pat
+ ::= DaCon PatBase*                            (data constructor patterm)
+  |  PatBase                                   (base pattern)
+
+PatBase
+ ::= &#39;()&#39;                                      (unit data constructor pattern)
+  |  DaCon                                     (named data constructor pattern)
+  |  Literal                                   (literal pattern)
+  |  Var                                       (variable pattern)
+  |  &#39;_&#39;                                       (wildcard pattern)
+  |  &#39;(&#39; Pat &#39;,&#39; Pat+ &#39;)&#39;                      (tuple pattern)
+  |  &#39;(&#39; Pat &#39;)&#39;                               (parenthesised pattern)
+</pre></div>
+</div>
+</div>
+<div class="section" id="effectual-expressions">
+<h2>Effectual Expressions<a class="headerlink" href="#effectual-expressions" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppEffect
+ ::= &#39;weakeff&#39; &#39;[&#39; Type &#39;]&#39; &#39;in&#39; Exp           (weaken effect of an expression)
+
+  |  &#39;private&#39; Bind+ WithCaps? &#39;in&#39; Exp        (private region introduction)
+
+  |  &#39;extend&#39;  Bind &#39;using&#39; Bind+
+               WithCaps? &#39;in&#39; Exp              (region extension)
+
+  |  &#39;box&#39; Exp                                 (box a computation)
+  |  &#39;run&#39; Exp                                 (run a boxed computation)
+
+WithCaps
+ ::= &#39;with&#39; &#39;{&#39; BindT+ &#39;}&#39;
 </pre></div>
 </div>
 </div>
