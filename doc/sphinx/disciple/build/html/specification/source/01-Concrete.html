@@ -236,17 +236,32 @@ ExpAbsParam
 <div class="section" id="binding">
 <h2>Binding<a class="headerlink" href="#binding" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppBind
- ::= &#39;let&#39;    DeclTerm   &#39;in&#39; Exp                   (non-recursive let binding)
-  |  &#39;letrec&#39; DeclTerm+; &#39;in&#39; Exp                   (recursive let bindings)
-  |  &#39;do&#39;    &#39;{&#39; Stmt+; &#39;}&#39;                         (do expression)
+ ::= &#39;let&#39; &#39;{&#39; DeclTerm+; &#39;}&#39; &#39;in&#39; Exp              (non-recursive let binding)
+  |  &#39;rec&#39; &#39;{&#39; DeclTerm+; &#39;}&#39; &#39;in&#39; Exp              (recursive let bindings)
+  |  &#39;do&#39;  &#39;{&#39; Stmt+;     &#39;}&#39;                       (do expression)
+
+Stmt
+ ::= &#39;let&#39; &#39;{&#39; DeclTerm+; &#39;}&#39;                       (explicitly non-recursive bindings)
+  |  &#39;rec&#39; &#39;{&#39; DeclTerm+; &#39;}&#39;                       (explicitly recursive bindings)
+
+  |  Var DeclTermParams* (&#39;:&#39; Type)?                (term declaration using guards)
+         GuardedExpsMaybe
+
+  |  Var &#39;&lt;-&#39; Exp                                   (monadic bind)
+  |  Exp                                            (expression)
 </pre></div>
 </div>
+<p>Groups of recursive or non-recursive let-bindings are introduced with the &#8216;let&#8217; and &#8216;rec&#8217; keywords respectively. The syntax of the local bindings is the same as at top-level.</p>
+<p>The <code class="docutils literal"><span class="pre">do</span></code> construct carries a sequence of statements. Groups of local non-recursive or recursive bindings can be introduced with the &#8216;let&#8217; and &#8216;rec&#8217; keywords as before. Single non-recursive bindings can also be written at the top-level of the do construct, omitting the implied <code class="docutils literal"><span class="pre">let</span></code> keyword.</p>
+<p>Monadic binding is desugared using whatever <code class="docutils literal"><span class="pre">bind</span></code> function is currently in scope.</p>
+<p>Braces in the binding forms will be inserted using the offside rule.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/07-Binding/Main.ds">binding specification tests</a> for examples.</p>
 </div>
 <div class="section" id="matching">
 <h2>Matching<a class="headerlink" href="#matching" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppMatch
- ::= &#39;case&#39;  &#39;{&#39; AltCase+; &#39;}&#39;                      (case expression)
-  |  &#39;match&#39; &#39;{&#39; GuardedExp+; &#39;}&#39;                   (match expression)
+ ::= &#39;case&#39; Exp &#39;of&#39; &#39;{&#39; AltCase+; &#39;}&#39;              (case expression)
+  |  &#39;match&#39; GuardedExp+                            (match expression)
   |  &#39;if&#39; Exp &#39;then&#39; Exp &#39;else&#39; Exp                 (if-expression)
 
 AltCase
@@ -266,11 +281,13 @@ PatBase
   |  &#39;(&#39; Pat &#39;)&#39;                                    (parenthesised pattern)
 </pre></div>
 </div>
+<p>Case expressions evaluate the scrutinee then match the result against the given alternatives. Match expressions allow values to defined anonymously using guards. The if-then-else expression is standard and is sugar for a case expression that matches against the &#8216;True&#8217; and &#8216;False&#8217; patterns.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/08-Matching/Main.ds">matching specification tests</a> for examples.</p>
 </div>
 <div class="section" id="regions-and-effects">
 <h2>Regions and Effects<a class="headerlink" href="#regions-and-effects" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-none"><div class="highlight"><pre><span></span>ExpAppEffect
- ::= &#39;weakeff&#39; &#39;[&#39; Type &#39;]&#39; &#39;in&#39; Exp                (weaken effect of an expression)
+ ::= &#39;weakeff&#39; Type &#39;in&#39; Exp                        (weaken effect of an expression)
 
   |  &#39;private&#39; Bind+ WithCaps? &#39;in&#39; Exp             (private region introduction)
 
@@ -281,9 +298,15 @@ PatBase
   |  &#39;run&#39; Exp                                      (run a boxed computation)
 
 WithCaps
- ::= &#39;with&#39; &#39;{&#39; BindT+ &#39;}&#39;
+ ::= &#39;with&#39; &#39;{&#39; TypeApp+ &#39;}&#39;
 </pre></div>
 </div>
+<p>The <code class="docutils literal"><span class="pre">weakeff</span></code> construct is used to weaken the effect of the body expression. The provided type must be an effect type, which is added to the effect of the body expression.</p>
+<p>The <code class="docutils literal"><span class="pre">private</span></code> construct introduces new local regions with the given names and capabilities. The regions and capabilities are in scope in the body expression.</p>
+<p>The <code class="docutils literal"><span class="pre">extend</span></code> construct extends an existing region with a new subregion, where the subregion has the given added capabilities.</p>
+<p>The <code class="docutils literal"><span class="pre">box</span></code> form suspends an effectful expression, yielding a closure.</p>
+<p>The <code class="docutils literal"><span class="pre">run</span></code> form executes a closure, yielding the result value.</p>
+<p>See the <a class="reference external" href="https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/09-Effects/Main.ds">effect specification tests</a> for examples.</p>
 </div>
 </div>
 
