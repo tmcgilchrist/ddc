@@ -33,7 +33,7 @@ checkAppX !table !ctx
               -> return (tResult, effs)
 
               | otherwise
-              -> throw  $ ErrorAppMismatch a xx tParam tArg
+              -> throw  $ ErrorMismatch a tParam tArg xx
 
              Nothing
               -> throw  $ ErrorAppNotFun a xx tFn
@@ -216,6 +216,7 @@ synthAppArg table
                 , text "    demand    = " <> ppr demand
                 , text "    scope     = " <> ppr isScope
                 , text "    tFn       = " <> ppr tFn
+                , text "    arg       = " <> ppr arg
                 , text "    paramSort = " <> text (show paramSort)
                 , text "    paramMode = " <> text (show paramMode)
                 , text "    bParam    = " <> ppr bParam

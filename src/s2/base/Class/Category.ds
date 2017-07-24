@@ -28,7 +28,7 @@ compose {@cat: Data -> Data -> Data} {@a b c: Data}
  = compose'
 
 
--- TODO: Should not need to supply implicit arg.
+-- ISSUE #436: Post type checker does not fined unresolved metavariabls.
 composeLeft
         {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat b c -> cat a b -> cat a c

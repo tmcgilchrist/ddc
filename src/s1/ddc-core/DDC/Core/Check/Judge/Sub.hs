@@ -226,11 +226,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.union effs1 effs2
                 , ctx2)
 
-
- -- TODO: we're missing the rule with the other way,
- --  inferred is D t1'..tn', expected is A ~> B
-
- -- Sub_Implicit_Right
+ -- Sub_Implicit
  --
  --   The inferred type  is   (A ~> B)
  --   while expected type is  (D t1'..tn')
@@ -257,7 +253,7 @@ makeSub config a ctx0 x0 xL tL tR err
         let aFnElab     = AnTEC tElaborate (tBot kEffect) (tBot kClosure) a
         let xArgElab    = XApp aArg (XPrim aFnElab PElaborate) (RType tArg)
 
-        -- TODO: this assumes the functional expression has no effects.
+        -- ISSUE #431: Sub_Implcit_Right rule assumes functional expression has no effects.
         let aFn         = AnTEC tL    (tBot kEffect) (tBot kClosure) a
         let xL_elab     = XApp aFn xL (RImplicit (RTerm xArgElab))
 
@@ -427,7 +423,7 @@ makeSub config a ctx0 x0 xL tL tR err
 
         -- The body of our new type abstraction must be pure.
         when (not $ eff2 == Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure a x0 UniverseSpec (TSum eff2)
+         $ throw $ ErrorAbsNotPure a x0 UniverseSpec (TSum eff2)
 
         tBodyR_ctx3       <- applyContext ctx3 tBodyR'
         let tR'           =  TForall bParamR tBodyR_ctx3

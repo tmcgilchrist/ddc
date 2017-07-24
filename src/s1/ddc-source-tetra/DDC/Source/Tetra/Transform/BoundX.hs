@@ -181,7 +181,6 @@ instance HasAnonBind l => MapBoundX GCast l where
 downC _l _f _d cc
   = case cc of
         CastWeakenEffect{} -> cc
-        CastPurify w    -> CastPurify w
         CastBox         -> CastBox
         CastRun         -> CastRun
 
@@ -224,7 +223,7 @@ mapBoundAtDepthXLets l f d lts
         LPrivate _b _ bts
          -> (lts, countBAnonsB l $ map fst bts)
 
-        -- TODO: depth here is wrong.
+        -- ISSUE #430: In BoundX transform, management of debruijn depth is wrong.
         LGroup bRec cs
          -> let inc = sum (map (countBAnonsC l) cs)
                 cs' = map (mapBoundAtDepthX l f (d + inc)) cs

@@ -1,0 +1,128 @@
+
+-- Demonstrate the term-level binding expressions.
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+
+-- Let bindings.
+test1: Nat
+ = let x = 2 in x + 3
+
+
+-- Chained let-bindings.
+test2: Nat
+ = let x = 2 in
+   let y = 3 in
+   x + y
+
+
+-- Chained let bindings in a single group.
+test3: Nat
+ = let  x = 2
+        y = 3
+   in   x + y
+
+
+-- Nested let-bindings.
+test4: Nat
+ = let x = let y = 1 in y + 2 in x + 3
+
+
+-- Recursive binding.
+test5: Nat
+ = rec  down n = if n == 0 then 0 else down (n - 1)
+   in   down 10
+
+
+-- Mutually recursive binding.
+test6: Nat
+ = rec  down1 n = if n == 0 then 0 else down2 (n - 1)
+        down2 n = if n == 0 then 0 else down1 (n - 1)
+   in   down1 10
+
+
+-- Statements with binding.
+test7: S Console Unit
+ = box do
+        x       = "derp"
+        f a b   = a + b
+
+        writel x
+        writel $ show $ f 5 6
+
+
+-- Monadic binding.
+test8: Maybe Nat
+ = do   x       <- Just 6
+        y       <- Just 7
+        return  $ x + y
+
+
+-- Monadic binding.
+test9: Maybe Nat
+ = do   x       <- Nothing
+        y       <- Just 7
+        return  $ x + y
+
+
+-- Explicit Haskell-style let-bindings as a statement.
+test10: S Console Unit
+ = box do
+        let x : Text
+            x   = "red"
+            y   = "green"
+
+
+        writel x
+        writel y
+
+        let z   = "blue"
+        writel z
+
+
+-- Explicit Haskell-style recursive let-bindings as a statement.
+test11: Maybe Nat
+ = do
+        rec down1 (n: Nat): Nat
+             | n == 0    = 0
+             | otherwise = down1 (n - 1)
+
+            down2: Nat -> Nat
+            down2 n
+             | n == 0    = 0
+             | otherwise = down1 (n - 1)
+
+        return $ down1 10
+
+
+-- Statements with local where binding.
+test12: S Console Unit
+ = box do
+        writel "hello"
+        f x y = x + y
+
+        writel $ show (f a b)
+         where  a = 5
+                b = 6
+
+        writel $ show (f a b)
+         where  a = 7
+                b = 8
+
+main ()
+ = do
+        writel $ show $ test1
+        writel $ show $ test2
+        writel $ show $ test3
+        writel $ show $ test4
+        writel $ show $ test5
+        writel $ show $ test6
+        test7
+        writel $ show $ test8
+        writel $ show $ test9
+        test10
+        writel $ show $ test11
+        test12
+

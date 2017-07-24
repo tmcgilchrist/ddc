@@ -1,0 +1,67 @@
+
+module Main
+import Trace; World; Object; Light
+import Main.Args
+import System.IO.Console
+import Class.Show
+where
+
+
+-- | Draw a ray-traced image as a PPM file.
+main ()
+ = do
+        mWidth
+         = mainArgs_load Nothing
+         $ Cons (ArgNat "-width" "width of image" (\n _ -> Just n))
+         $ Nil
+
+        width   = fromMaybe 40 mWidth
+        world   = world_make 0.0
+        posEye  = Vec3 0.0   0.0  -500.0
+        fov     = 100.0
+        size    = (truncate# width, truncate# width)
+        limit   = 5
+
+        writel "P3"
+        writel "# derp.ppm"
+        writel $ show width %% show width
+        writel "255"
+
+        draw world posEye fov size limit
+
+
+draw    (world:  World)         -- ^ World to draw.
+        (posEye: Vec3)          -- ^ Position of eye.
+        (fov:    Float)         -- ^ Field of view.
+        (size:  (Float, Float)) -- ^ Size of image, in pixels.
+        (limit:  Nat)           -- ^ Limit number of ray bounces.
+        : S Console Unit
+ | (sizeX, sizeY) <- size
+ = go -0.5 0.5
+ where
+        stepX   = div 1.0 sizeX
+        stepY   = div 1.0 sizeY
+
+        go (posX posY: Float): S Console Unit
+         | posX >= 0.5
+         = do   writel ""
+                go -0.5 (posY - stepY)
+
+         | posY <= -0.5
+         = do   writel ""
+
+         | otherwise
+         = do   color   = trace_pixel world
+                                posEye fov
+                                sizeX sizeY posX posY
+                                limit
+
+                match
+                 | Vec3 r g b   <- color
+                 = do   r'      = float64_floor (r * 255.0)
+                        g'      = float64_floor (g * 255.0)
+                        b'      = float64_floor (b * 255.0)
+                        write $ show r' %% show g' %% show b' %% " "
+
+                go (posX + stepX) posY
+

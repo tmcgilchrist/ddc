@@ -1,0 +1,8 @@
+
+-- ISSUE #408: No source locations for import and export errors.
+module Test
+
+import foreign c value
+ derp : Read
+
+where

@@ -15,14 +15,14 @@ import Data.Maybe
 -- | LLVM pretty printer configuration.
 data Config
         = Config
-        { configLlvmVersion             :: Version 
+        { configLlvmVersion             :: Version
         , configWantsMetadataAsValue    :: Bool
         , configWantsLoadReturnTypes    :: Bool }
         deriving Show
 
 
 -- | LLVM version descriptor.
-type Version    
+type Version
         = String
 
 
@@ -46,10 +46,10 @@ configOfVersion mVersion
    in   Config
         { configLlvmVersion             = version
 
-        , configWantsMetadataAsValue    
+        , configWantsMetadataAsValue
                 = fromMaybe False  $ versionWantsMetadataAsValue version
 
-        , configWantsLoadReturnTypes    
+        , configWantsLoadReturnTypes
                 = fromMaybe True   $ versionWantsLoadReturnTypes version }
 
 
@@ -62,13 +62,15 @@ versionWantsMetadataAsValue v
         | isPrefixOf "3.3." v   = Just True
         | isPrefixOf "3.4." v   = Just True
         | isPrefixOf "3.5." v   = Just True
-        | isPrefixOf "3."   v   = Just False
+        | isPrefixOf "3.6"  v   = Just False
+        | isPrefixOf "3.7"  v   = Just False
+        | isPrefixOf "3.8"  v   = Just False
+        | isPrefixOf "3.9"  v   = Just False
         | otherwise             = Nothing
 
 
--- | LLVM versions before 3.7.0 did not use a result type
---   on load and getelembyptr operations, while after they
---   did.
+-- | LLVM versions before 3.7.0 did not use a result type on load
+--   and getelembyptr operations, while after they did.
 versionWantsLoadReturnTypes :: Version -> Maybe Bool
 versionWantsLoadReturnTypes v
         | isPrefixOf "3.1." v   = Just False
@@ -77,7 +79,9 @@ versionWantsLoadReturnTypes v
         | isPrefixOf "3.4." v   = Just False
         | isPrefixOf "3.5." v   = Just False
         | isPrefixOf "3.6." v   = Just False
-        | isPrefixOf "3." v     = Just True
+        | isPrefixOf "3.7." v   = Just True
+        | isPrefixOf "3.8." v   = Just True
+        | isPrefixOf "3.9." v   = Just True
         | otherwise             = Nothing
 
 

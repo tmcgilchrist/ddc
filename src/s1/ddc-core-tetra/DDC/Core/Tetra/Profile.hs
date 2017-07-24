@@ -14,12 +14,12 @@ import DDC.Core.Lexer
 import DDC.Type.Exp
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
-import DDC.Data.SourcePos       
+import DDC.Data.SourcePos
 import qualified DDC.Type.Env   as Env
 
 
 -- | Language profile for Disciple Core Tetra.
-profile :: Profile Name 
+profile :: Profile Name
 profile
         = Profile
         { profileName                   = "Tetra"
@@ -27,8 +27,8 @@ profile
         , profilePrimDataDefs           = primDataDefs
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
-        , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Just isNameHole 
+        , profileTypeIsUnboxed          = const False
+        , profileNameIsHole             = Just isNameHole
         , profileMakeLiteralName        = Just makeLiteralName }
 
 
@@ -36,20 +36,22 @@ profile
 makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
 makeLiteralName _ lit True
  = case lit of
-        LNat    n       -> Just $ NameLitNat     n
-        LInt    i       -> Just $ NameLitInt     i
-        LSize   s       -> Just $ NameLitSize    s
-        LWord   i b     -> Just $ NameLitWord    i b
-        LFloat  f b     -> Just $ NameLitFloat   f b
-        LChar   c       -> Just $ NameLitChar    c
-        LString tx      -> Just $ NameLitTextLit tx
+        LNat    n               -> Just $ NameLitNat     n
+        LInt    i               -> Just $ NameLitInt     i
+        LSize   s               -> Just $ NameLitSize    s
+        LWord   i b             -> Just $ NameLitWord    i b
+        LFloat  f (Just 32)     -> Just $ NameLitFloat   f 32
+        LFloat  f (Just 64)     -> Just $ NameLitFloat   f 64
+        LChar   c               -> Just $ NameLitChar    c
+        LString tx              -> Just $ NameLitTextLit tx
+        _                       -> Nothing
 
 makeLiteralName _ _ _
  = Nothing
 
 
 features :: Features
-features 
+features
         = Features
         { featuresTrackedEffects        = True
         , featuresTrackedClosures       = False
@@ -57,9 +59,9 @@ features
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = True
 
-        -- We don't want to insert implicit casts when type checking 
+        -- We don't want to insert implicit casts when type checking
         -- the core code during transformation, but we do insert them
-        -- the first time the source 
+        -- the first time the source
         , featuresImplicitRun           = False
         , featuresImplicitBox           = False
 
@@ -84,7 +86,7 @@ lexModuleString :: String -> Int -> String -> [Located (Token Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
-        rn (Located sp strTok) 
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
@@ -96,30 +98,30 @@ lexModuleString sourceName lineStart str
 lexExpString :: String -> Int -> String -> [Located (Token Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where 
-        rn (Located sp strTok) 
+ where
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Create a new type variable name that is not in the given environment.
-freshT :: Env Name -> Bind Name -> State Int Name
-freshT env bb
+freshT :: String -> Env Name -> Bind Name -> State Int Name
+freshT prefix env bb
  = do   i       <- get
         put (i + 1)
-        let n =  NameVar ("t" ++ show i)
+        let n =  NameVar (prefix ++ "t" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
-         _       -> freshT env bb
+         _       -> freshT prefix env bb
 
 
 -- | Create a new value variable name that is not in the given environment.
-freshX :: Env Name -> Bind Name -> State Int Name
-freshX env bb
+freshX :: String -> Env Name -> Bind Name -> State Int Name
+freshX prefix env bb
  = do   i       <- get
         put (i + 1)
-        let n = NameVar ("x" ++ show i)
+        let n = NameVar (prefix ++ "x" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
-         _       -> freshX env bb
+         _       -> freshX prefix env bb

@@ -1,0 +1,11 @@
+
+-- ISSUE #408: No source locations for import and export errors.
+module Test
+
+import foreign c value
+ foo : Nat# -> Nat#
+
+import foreign c value
+ foo : Word32# -> Nat#
+
+where

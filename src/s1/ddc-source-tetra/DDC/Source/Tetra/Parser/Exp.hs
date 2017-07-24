@@ -172,22 +172,20 @@ pExpFrontSP
         x       <- pExp
         pKey    EOf
         pSym    SBraceBra
-        alts    <- P.sepEndBy1 pAltCase (pSym SSemiColon)
+        alts    <- P.sepEndBy pAltCase (pSym SSemiColon)
         pSym    SBraceKet
         return  (sp, XAnnot sp $ XCase x alts)
 
-        -- match { | EXP = EXP | EXP = EXP ... }
+        -- match | EXP = EXP | EXP = EXP ...
         --  Sugar for cascaded case expressions case-expression.
  , do   sp      <- pKey EMatch
-        pSym SBraceBra
         gxs     <- liftM (map (AAltMatch . snd))
-                $  P.sepEndBy1  (pGuardedExpSP (pSym SEquals))
-                                (pSym SSemiColon)
+                $  P.many1 (pGuardedExpSP (pSym SEquals))
         let xError
                 = makeXErrorDefault
                         (Text.pack    $ sourcePosSource sp)
                         (fromIntegral $ sourcePosLine   sp)
-        pSym SBraceKet
+
         return  (sp, XAnnot sp $ XMatch sp gxs xError)
 
  , do   -- if-then-else
@@ -202,21 +200,12 @@ pExpFrontSP
                         [ AAltCase PTrue    [GExp x2]
                         , AAltCase PDefault [GExp x3]])
 
-        -- weakeff [Type] in Exp
+        -- weakeff Type in Exp
  , do   sp      <- pTokSP (KKeyword EWeakEff)
-        pSym    SSquareBra
         t       <- pType
-        pSym    SSquareKet
         pKey    EIn
         x       <- pExp
         return  (sp, XAnnot sp $ XCast (CastWeakenEffect t) x)
-
-        -- purify Witness in Exp
- , do   sp      <- pKey EPurify
-        w       <- pWitness
-        pTok (KKeyword EIn)
-        x       <- pExp
-        return  (sp, XAnnot sp $ XCast (CastPurify w) x)
 
         -- box Exp
  , do   sp      <- pKey EBox
@@ -399,18 +388,25 @@ pAltCase
 pLetsSP :: Parser (Lets, SP)
 pLetsSP
  = P.choice
-    [ -- non-recursive let
-      do sp       <- pKey ELet
-         l        <- liftM snd $ pDeclTermSP
-         return (LGroup False [l], sp)
+    [ -- non-recursive or recursive let
+      do (sp, isRec)
+           <- P.choice
+           [ do sp      <- pKey ELet
+                return (sp, False)
 
-      -- recursive let
-    , do sp       <- pKey ELetRec
-         pSym SBraceBra
-         ls       <- liftM (map snd)
-                  $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
-         pSym SBraceKet
-         return (LGroup True ls, sp)
+           , do sp      <- pKey ERec
+                return (sp, True) ]
+
+         P.choice
+          [ do  pSym SBraceBra
+                ls      <- liftM (map snd)
+                        $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
+                pSym SBraceKet
+                return (LGroup isRec ls, sp)
+
+          , do  l       <- liftM snd $ pDeclTermSP
+                return (LGroup isRec [l], sp) ]
+
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
@@ -583,8 +579,8 @@ pGuardedExpSP pTermSP
 
 -- | Represent a statement inside a do block.
 data Stmt
-        -- | Let-binding or type signature.
-        = StmtClause SP Clause
+        -- | Possibly recursive clause group.
+        = StmtGroup  SP Bool [Clause]
 
         -- | Case match.
         | StmtMatch  SP Pat Exp Exp
@@ -600,12 +596,30 @@ data Stmt
 pStmt :: Parser Stmt
 pStmt
  = P.choice
- [ -- Clause;
+ [ do   (sp, isRec)
+           <- P.choice
+           [ do sp      <- pKey ELet
+                return (sp, False)
+
+           , do sp      <- pKey ERec
+                return (sp, True) ]
+
+        P.choice
+          [ do  pSym SBraceBra
+                ls      <- liftM (map snd)
+                        $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
+                pSym SBraceKet
+                return $ StmtGroup sp isRec ls
+
+          , do  l       <- liftM snd $ pDeclTermSP
+                return $ StmtGroup sp isRec [l] ]
+
+   -- Clause;
    -- We need the 'try' because the function and argument names at the front
    -- of a clause can also be parsed as a function application in a statement.
-   P.try $
+ , P.try $
     do  (sp, c)  <- pDeclTermSP
-        return  $ StmtClause sp c
+        return  $ StmtGroup sp False [c]
 
  , P.try $
     do  p       <- pPat
@@ -627,7 +641,7 @@ pStmts
 
         -- As in Haskell, we require do blocks to end with a statement
         -- that gives the overall value.
-        case makeStmts [] stmts of
+        case makeStmts stmts of
          Nothing -> P.unexpected "do-block must end with a statement"
          Just x  -> return x
 
@@ -636,70 +650,65 @@ pStmts
 --   We collect consecutive clauses into the same clause group,
 --   so that we can define functions with multiple clauses at the top
 --   level of a 'do' expression.
-makeStmts :: [Clause] -> [Stmt] -> Maybe Exp
-makeStmts clsAcc ss
- = let
-        -- Wrap the clauses we're carrying around the given
-        -- body expression.
-        dropClauses xBody
-         = case clsAcc of
-                []      -> xBody
-                [SLet sp bmt [] [GExp x]]
-                        -> XAnnot sp $ XLet (LLet bmt x) xBody
-                _       -> XLet (LGroup False clsAcc) xBody
-   in
-      case ss of
+makeStmts :: [Stmt] -> Maybe Exp
+makeStmts ss
+ = case ss of
         [StmtNone _ x]
-         -> Just $ dropClauses
-                 $ x
+         -> Just x
 
         StmtNone sp x1 : rest
-         |  Just x2     <- makeStmts [] rest
+         |  Just xBody  <- makeStmts rest
          -> Just $ XAnnot sp
-                 $ dropClauses
-                 $ XLet (LLet (XBindVarMT BNone Nothing) x1) x2
+                 $ XLet (LLet (XBindVarMT BNone Nothing) x1) xBody
 
-        StmtClause _ cl : rest
-         -> case clsAcc of
-                -- Start accumulating successive clauses.
-                [] -> makeStmts (clsAcc ++ [cl]) rest
-
-                (cl1 : _)
-                   -- If this clause is for the same function as
-                   -- the previous one then we'll collect it into
-                   -- at letrec at this point.
-                   |  bindOfClause cl1 == bindOfClause cl
-                   -> makeStmts (clsAcc ++ [cl]) rest
-
-                   -- Otherwise make a standard let-expression.
-                _  | Just x3 <- makeStmts [] rest
-                   -> case cl of
-                        (SLet sp bmt [] [GExp x])
-                         -> Just $ XAnnot sp
-                         $  dropClauses
-                         $  XLet (LLet bmt x) x3
-
-                        _ -> Nothing
-
-                   | otherwise
-                   -> Nothing
+        StmtGroup sp isRec cls : rest
+         |  Just xBody <- makeStmts rest
+         -> Just $ makeStmtGroups sp isRec [] cls xBody
 
         StmtBind  sp p xRight : rest
-         |  Just xRest  <- makeStmts [] rest
+         |  Just xRest  <- makeStmts rest
          -> Just $ XAnnot sp
-                 $ dropClauses
                  $ XApp (XApp (XVar (UName (Text.pack "bind")))
                               (RTerm xRight))
                         (RTerm (XAbs (MTerm p Nothing) xRest))
 
         StmtMatch sp p x1 x2 : rest
-         |  Just x3      <- makeStmts [] rest
+         |  Just x3      <- makeStmts rest
          -> Just $ XAnnot sp
-                 $ dropClauses
                  $ XCase x1
                  [ AAltCase p        [GExp x3]
                  , AAltCase PDefault [GExp x2] ]
 
         _ -> Nothing
 
+
+makeStmtGroups
+        :: SourcePos
+        -> Bool         -- ^ Recursive bindings.
+        -> [Clause]     -- ^ Accumulated clauses of current function.
+        -> [Clause]     -- ^ More clauses to scan.
+        -> Exp
+        -> Exp
+
+makeStmtGroups sp isRec clsAcc [] xBody
+ = case clsAcc of
+        [SLet _ b [] [GExp x]]
+          -> XAnnot sp $ XLet (LLet b x) xBody
+        _ -> XAnnot sp $ XLet (LGroup isRec clsAcc) xBody
+
+
+
+makeStmtGroups sp isRec [] (cl : cls) xBody
+ = makeStmtGroups sp isRec [cl] cls xBody
+
+makeStmtGroups sp isRec clsAcc@(clAcc1 : _) (cl : cls) xBody
+ | bindOfClause clAcc1 == bindOfClause cl
+ = makeStmtGroups sp isRec (clsAcc ++ [cl]) cls xBody
+
+ | otherwise
+ = case clsAcc of
+        [SLet _ b [] [GExp x]]
+          -> XAnnot sp $ XLet (LLet b x) xBody
+        _ -> XAnnot sp $ XLet (LGroup isRec clsAcc)
+                       $ makeStmtGroups sp isRec [] (cl : cls) xBody
 

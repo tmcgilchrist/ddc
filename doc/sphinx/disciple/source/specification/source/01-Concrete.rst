@@ -244,8 +244,6 @@ Abstraction
 
 Abstractions begin with a ``\``, followed by some parameter bindings, then a ``->``. In the concrete syntax the unicode characters ``λ`` and ``→`` can be used in place of ``\`` and ``->``. Term parameter can be bound by patterns with or without type annotations. Explicit term parameters are specified with ``()`` parenthesis and implicit term parameters with ``{}`` parenthesis. Implicit type parameters are specified with ``{@ }`` parenthesis, where the ``{}`` refers to the fact the type arguments will be passed implicitly at the call site, and the ``@`` refers to the name space of type variables.
 
-
-
 See the `abstraction specification tests`_ for examples.
 
 .. _`abstraction specification tests`:
@@ -258,9 +256,32 @@ Binding
 .. code-block:: none
 
   ExpAppBind
-   ::= 'let'    DeclTerm   'in' Exp                   (non-recursive let binding)
-    |  'letrec' DeclTerm+; 'in' Exp                   (recursive let bindings)
-    |  'do'    '{' Stmt+; '}'                         (do expression)
+   ::= 'let' '{' DeclTerm+; '}' 'in' Exp              (non-recursive let binding)
+    |  'rec' '{' DeclTerm+; '}' 'in' Exp              (recursive let bindings)
+    |  'do'  '{' Stmt+;     '}'                       (do expression)
+
+  Stmt
+   ::= 'let' '{' DeclTerm+; '}'                       (explicitly non-recursive bindings)
+    |  'rec' '{' DeclTerm+; '}'                       (explicitly recursive bindings)
+
+    |  Var DeclTermParams* (':' Type)?                (term declaration using guards)
+           GuardedExpsMaybe
+
+    |  Var '<-' Exp                                   (monadic bind)
+    |  Exp                                            (expression)
+
+Groups of recursive or non-recursive let-bindings are introduced with the 'let' and 'rec' keywords respectively. The syntax of the local bindings is the same as at top-level.
+
+The ``do`` construct carries a sequence of statements. Groups of local non-recursive or recursive bindings can be introduced with the 'let' and 'rec' keywords as before. Single non-recursive bindings can also be written at the top-level of the do construct, omitting the implied ``let`` keyword.
+
+Monadic binding is desugared using whatever ``bind`` function is currently in scope.
+
+Braces in the binding forms will be inserted using the offside rule.
+
+See the `binding specification tests`_ for examples.
+
+.. _`binding specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/07-Binding/Main.ds
 
 
 Matching
@@ -269,8 +290,8 @@ Matching
 .. code-block:: none
 
   ExpAppMatch
-   ::= 'case'  '{' AltCase+; '}'                      (case expression)
-    |  'match' '{' GuardedExp+; '}'                   (match expression)
+   ::= 'case' Exp 'of' '{' AltCase+; '}'              (case expression)
+    |  'match' GuardedExp+                            (match expression)
     |  'if' Exp 'then' Exp 'else' Exp                 (if-expression)
 
   AltCase
@@ -289,6 +310,13 @@ Matching
     |  '(' Pat ',' Pat+ ')'                           (tuple pattern)
     |  '(' Pat ')'                                    (parenthesised pattern)
 
+Case expressions evaluate the scrutinee then match the result against the given alternatives. Match expressions allow values to defined anonymously using guards. The if-then-else expression is standard and is sugar for a case expression that matches against the 'True' and 'False' patterns.
+
+See the `matching specification tests`_ for examples.
+
+.. _`matching specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/08-Matching/Main.ds
+
 
 Regions and Effects
 -------------------
@@ -296,7 +324,7 @@ Regions and Effects
 .. code-block:: none
 
   ExpAppEffect
-   ::= 'weakeff' '[' Type ']' 'in' Exp                (weaken effect of an expression)
+   ::= 'weakeff' Type 'in' Exp                        (weaken effect of an expression)
 
     |  'private' Bind+ WithCaps? 'in' Exp             (private region introduction)
 
@@ -307,7 +335,20 @@ Regions and Effects
     |  'run' Exp                                      (run a boxed computation)
 
   WithCaps
-   ::= 'with' '{' BindT+ '}'
+   ::= 'with' '{' TypeApp+ '}'
 
+The ``weakeff`` construct is used to weaken the effect of the body expression. The provided type must be an effect type, which is added to the effect of the body expression.
 
+The ``private`` construct introduces new local regions with the given names and capabilities. The regions and capabilities are in scope in the body expression.
+
+The ``extend`` construct extends an existing region with a new subregion, where the subregion has the given added capabilities.
+
+The ``box`` form suspends an effectful expression, yielding a closure.
+
+The ``run`` form executes a closure, yielding the result value.
+
+See the `effect specification tests`_ for examples.
+
+.. _`effect specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/09-Effects/Main.ds
 

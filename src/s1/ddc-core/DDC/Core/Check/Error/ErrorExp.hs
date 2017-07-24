@@ -73,13 +73,6 @@ data Error a n
 
 
         -- Application ------------------------------------
-        -- | A function application where the parameter and argument don't match.
-        | ErrorAppMismatch
-        { errrorAnnot           :: a
-        , errorChecking         :: Exp a n
-        , errorParamType        :: Type n
-        , errorArgType          :: Type n }
-
         -- | Tried to apply something that is not a function.
         | ErrorAppNotFun
         { errorAnnot            :: a
@@ -91,82 +84,31 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
 
-        -- | Cannot find implicit of required type.
-        | ErrorAppCannotFindImplicit
-        { errorAnnot            :: a
-        , errorType             :: Type n 
-        , errorChecking         :: Exp a n }
 
-
-        -- Lambda -----------------------------------------
+        -- Abs -------------------------------------------
         -- | A type abstraction that tries to shadow a type variable that is
         --   already in the environment.
-        | ErrorLamShadow
+        | ErrorAbsShadow
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
+        -- | A function abstraction without a type annotation on the parameter.
+        --   This is only an error when checking in Recon mode.
+        | ErrorAbsParamUnannotated
+        { errorAnnot            :: a
+        , errorBind             :: Bind n }
+
         -- | An abstraction where the body has a visible side effect that
         --   is not supported by the current language fragment.
-        | ErrorLamNotPure
+        | ErrorAbsNotPure
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorUniverse         :: Universe
         , errorEffect           :: Effect n }
 
-        -- | A value function where the parameter does not have data
-        --   or witness kind.
-        | ErrorLamBindBadKind
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorType             :: Type n
-        , errorKind             :: Kind n }
-
-        -- | An abstraction where the body does not have data kind.
-        | ErrorLamBodyNotData
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorType             :: Type n
-        , errorKind             :: Kind n }
-
-        -- | A function abstraction without a type annotation on the parameter.
-        | ErrorLamParamUnannotated
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n }
-
-        -- | A type abstraction without a kind annotation on the parameter.
-        | ErrorLAMParamUnannotated
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n }
-
-        -- | A type abstraction parameter with a bad sort.
-        | ErrorLAMParamBadSort
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorSort             :: Sort n }
-
-
-        -- Let --------------------------------------------
-        -- | A let-expression where the type of the binder does not match the right
-        --   of the binding.
-        | ErrorLetMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorType             :: Type n }
-
-        -- | A let-expression where the right of the binding does not have data kind.
-        | ErrorLetBindingNotData
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorKind             :: Kind n }
-
-        -- | A let-expression where the body does not have data kind.
-        | ErrorLetBodyNotData
+        -- | An abstraction where the parameter type does not have a valid kind.
+        | ErrorAbsBindBadKind
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorType             :: Type n
@@ -195,10 +137,13 @@ data Error a n
         , errorBind             :: Bind n }
 
 
-        -- Letregion --------------------------------------
+        -- Private --------------------------------------
         -- | A letregion-expression where the some of the bound variables do not
         --   have region kind.
-        | ErrorLetRegionsNotRegion
+        --   This is an internal error. The concrete syntax of the language should
+        --   not allow us to write region binders on private constructs that
+        --   do not have region kind.
+        | ErrorPrivateNotRegion
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n]
@@ -206,14 +151,14 @@ data Error a n
 
         -- | A letregion-expression that tried to shadow some pre-existing named
         --   region variables.
-        | ErrorLetRegionsRebound
+        | ErrorPrivateRebound
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n] }
 
         -- | A letregion-expression where some of the the bound region variables
         --   are free in the type of the body.
-        | ErrorLetRegionFree
+        | ErrorPrivateEscape
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n]
@@ -221,13 +166,13 @@ data Error a n
 
         -- | A letregion-expression that tried to create a witness with an
         --   invalid type.
-        | ErrorLetRegionWitnessInvalid
+        | ErrorPrivateWitnessInvalid
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
         -- | A letregion-expression that tried to create conflicting witnesses.
-        | ErrorLetRegionWitnessConflict
+        | ErrorPrivateWitnessConflict
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBindWitness1     :: Bind n
@@ -235,7 +180,7 @@ data Error a n
 
         -- | A letregion-expression where a bound witnesses was not for the
         --   the region variable being introduced.
-        | ErrorLetRegionsWitnessOther
+        | ErrorPrivateWitnessOther
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBoundRegions     :: [Bound n]
@@ -275,6 +220,10 @@ data Error a n
 
         -- | A case-expression where the scrutinee type is not in our set
         --   of data type declarations.
+        --
+        --   This is an internal error. There shouldn't be any way to
+        --   introduce a value of an undeclared type.
+        --
         | ErrorCaseScrutineeTypeUndeclared
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
@@ -314,19 +263,16 @@ data Error a n
 
         -- | A case-expression where the pattern types could not be instantiated
         --   with the arguments of the scrutinee type.
+        --
+        --   This is an internal error. The structure of data type declarations
+        --   should be checked so that the result type of each data constructor
+        --   matches the data type being declared.
+        --
         | ErrorCaseCannotInstantiate
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorTypeScrutinee    :: Type n
         , errorTypeCtor         :: Type n }
-
-        -- | A case-expression where the type of the scrutinee does not match
-        --   the type of the pattern.
-        | ErrorCaseScrutineeTypeMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorTypeScrutinee    :: Type n
-        , errorTypePattern      :: Type n }
 
         -- | A case-expression where the annotation on a pattern variable binder
         --   does not match the field type of the constructor.
@@ -336,23 +282,8 @@ data Error a n
         , errorTypeAnnot        :: Type n
         , errorTypeField        :: Type n }
 
-        -- | A case-expression where the result types of the alternatives are not
-        --   identical.
-        | ErrorCaseAltResultMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorAltType1         :: Type n
-        , errorAltType2         :: Type n }
-
 
         -- Casts ------------------------------------------
-        -- | A weakeff-cast where the type provided does not have effect kind.
-        | ErrorWeakEffNotEff
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorEffect           :: Effect n
-        , errorKind             :: Kind n }
-
         -- | A run cast applied to a non-suspension.
         | ErrorRunNotSuspension
         { errorAnnot            :: a
@@ -371,12 +302,6 @@ data Error a n
         { errorAnnot            :: a
         , errorExp              :: Exp a n }
 
-        -- Types ------------------------------------------
-        -- | Found a naked `XType` that wasn't the argument of an application.
-        | ErrorNakedType
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n }
-
 
         -- Witnesses --------------------------------------
         -- | Found a naked `XWitness` that wasn't the argument of an application.
@@ -384,7 +309,4 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
         deriving (Show)
-
-
-
 

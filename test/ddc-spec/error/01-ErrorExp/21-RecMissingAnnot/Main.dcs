@@ -1,0 +1,9 @@
+
+-- Letrecs must have annotations when checking in Recon mode.
+-- ISSUE #388 No source locations when compliance checker fails.
+module Test with letrec
+
+f x = x
+
+
+
